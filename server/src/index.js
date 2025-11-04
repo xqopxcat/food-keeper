@@ -7,6 +7,7 @@ import lookupRoute from './routes/lookup.js';
 import pushRoute from './routes/push.js';
 import rulesRoute from './routes/rules.js';
 import estimateRoute from './routes/estimate.js';
+import offLookupRoute from './routes/offLookup.js';
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,7 @@ app.use('/api', lookupRoute);
 app.use('/api', pushRoute);
 app.use('/api', rulesRoute);
 app.use('/api', estimateRoute);
+app.use('/api', offLookupRoute);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));

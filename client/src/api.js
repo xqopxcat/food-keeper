@@ -54,3 +54,15 @@ export async function estimateShelfLife(payload) {
   return res.json();
 }
 
+export async function lookupOrFallback(code) {
+  // 先查本地
+  let r = await fetch(`${SERVER}/api/lookup?barcode=${code}`);
+  if (r.ok) return r.json();
+
+  // 再去 OFF 查一次，並同時把資料寫回 products
+  r = await fetch(`${SERVER}/api/off/lookup?barcode=${code}`);
+  if (!r.ok) throw new Error('NOT_FOUND');
+  return r.json();
+}
+
+

@@ -120,5 +120,82 @@
     "priority": 10,
     "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["freezer"], "state": ["whole"] },
     "result": { "daysMin": 0, "daysMax": 0, "tips": "不建議把乾麵冷凍，常溫密封即可", "baseConfidence": 0.6 }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Snack"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 180,
+      "daysMax": 270,
+      "tips": "請存放陰涼乾燥處，避免陽光直射；開封後請密封冷藏並儘快食用。",
+      "baseConfidence": 0.9
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Snack"],
+      "storageMode": ["fridge"],
+      "state": ["opened"]
+    },
+    "result": {
+      "daysMin": 3,
+      "daysMax": 7,
+      "tips": "開封後密封冷藏，並於一週內食用完畢以保持酥脆與風味。",
+      "baseConfidence": 0.9
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Chocolate"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 180,
+      "daysMax": 365,
+      "tips": "請存放於陰涼乾燥處，理想溫度 18–22°C；避免陽光直射與高溫潮濕。",
+      "baseConfidence": 0.9
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Chocolate"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 365,
+      "daysMax": 540,
+      "tips": "冷藏可延長保存，但須密封防潮；食用前取出回溫以避免結霜產生白霜。",
+      "baseConfidence": 0.85
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Chocolate"],
+      "storageMode": ["fridge"],
+      "state": ["opened"]
+    },
+    "result": {
+      "daysMin": 60,
+      "daysMax": 120,
+      "tips": "開封後冷藏密封保存，避免異味吸附，建議 2–4 個月內食用完畢。",
+      "baseConfidence": 0.8
+    }
   }
+
+
 ]

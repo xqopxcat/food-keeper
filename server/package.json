@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "seed": "node seedRules.js"
+    "seed": "node seedRules.js",
+    "seed:off": "node scripts/ingest_off.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mongoose": "^8.6.3",
+    "node-fetch": "^3.3.2",
     "web-push": "^3.6.7"
   }
 }
