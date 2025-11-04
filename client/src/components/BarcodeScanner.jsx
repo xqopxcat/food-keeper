@@ -17,9 +17,40 @@ export default function BarcodeScanner({ onDetected }) {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' } }, audio: false
         });
-        if (!videoRef.current) return;
+        if (stopped || !videoRef.current) return;
+        
         videoRef.current.srcObject = stream;
+        
+        // 等待 video 元素準備好再播放
+        await new Promise((resolve, reject) => {
+          if (!videoRef.current) {
+            reject(new Error('Video element not available'));
+            return;
+          }
+          
+          const video = videoRef.current;
+          
+          const onLoadedData = () => {
+            video.removeEventListener('loadeddata', onLoadedData);
+            video.removeEventListener('error', onError);
+            resolve();
+          };
+          
+          const onError = (e) => {
+            video.removeEventListener('loadeddata', onLoadedData);
+            video.removeEventListener('error', onError);
+            reject(e);
+          };
+          
+          video.addEventListener('loadeddata', onLoadedData);
+          video.addEventListener('error', onError);
+        });
+        
+        if (stopped || !videoRef.current) return;
+        
         await videoRef.current.play();
+
+        if (stopped) return;
 
         codeReader.decodeFromVideoDevice(null, videoRef.current, result => {
           if (stopped) return;
@@ -31,8 +62,10 @@ export default function BarcodeScanner({ onDetected }) {
         });
       } catch (e) {
         console.error(e);
-        setError(e?.message || 'Camera init failed');
-        setRunning(false);
+        if (!stopped) {
+          setError(e?.message || 'Camera init failed');
+          setRunning(false);
+        }
       }
     }
 
@@ -41,8 +74,13 @@ export default function BarcodeScanner({ onDetected }) {
       stopped = true;
       setRunning(false);
       codeReader.reset();
-      const stream = videoRef.current?.srcObject;
-      stream && stream.getTracks().forEach(t => t.stop());
+      if (videoRef.current) {
+        const stream = videoRef.current.srcObject;
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+        }
+        videoRef.current.srcObject = null;
+      }
     }
 
     start();
