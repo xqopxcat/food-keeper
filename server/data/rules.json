@@ -1,0 +1,124 @@
+[
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Citrus_orange"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 21, "tips": "放蔬果格保持乾燥透氣", "baseConfidence": 0.7 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Garlic_bulb"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 21, "daysMax": 35, "tips": "陰涼乾燥通風，避免悶濕", "baseConfidence": 0.7 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Apple"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 30, "tips": "透氣袋放蔬果格，避免與香蕉同放", "baseConfidence": 0.7 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Banana"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "常溫避光，熟後可短暫冷藏 1–2 天", "baseConfidence": 0.7 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Strawberry"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "鋪紙巾密封冷藏，食用前再清洗", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Blueberry"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "通風冷藏，保持乾燥", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Grape"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "連枝冷藏，食用前再洗", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Tomato"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 7, "tips": "常溫避光；過熟可短暫冷藏", "baseConfidence": 0.7 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Cucumber"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "蔬果格冷藏，避免水氣", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Bell_pepper"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "透氣袋冷藏", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Spinach"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 4, "tips": "紙巾吸水包好冷藏，盡快食用", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Lettuce_leafy"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "洗淨瀝乾、紙巾包裹密封冷藏", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Bok_choy"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "蔬果格冷藏，避免積水", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Broccoli"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "直立冷藏，避免水漬", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Carrot"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 21, "tips": "去葉密封冷藏，可包濕紙巾保水", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Potato"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 30, "tips": "陰涼避光，勿冷藏，避免發芽", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Onion"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 21, "daysMax": 35, "tips": "乾燥通風，避免潮濕", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Ginger"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 7, "daysMax": 14, "tips": "紙巾包好冷藏，保持乾燥", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Green_onion"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "紙巾吸水後套袋冷藏", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Mushroom"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "紙袋冷藏，避免密封", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Lemon"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 30, "tips": "透氣袋冷藏", "baseConfidence": 0.7 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Lime"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 30, "tips": "透氣袋冷藏", "baseConfidence": 0.7 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Pineapple"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 2, "daysMax": 3, "tips": "常溫熟成，避免日曬；切開後冷藏", "baseConfidence": 0.7 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Pineapple"], "storageMode": ["fridge"], "state": ["cut"] }, "result": { "daysMin": 2, "daysMax": 3, "tips": "密封冷藏，盡快食用", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Watermelon"], "storageMode": ["fridge"], "state": ["cut"] }, "result": { "daysMin": 2, "daysMax": 3, "tips": "保鮮膜封口冷藏", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Avocado"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "常溫催熟；熟後冷藏 1–2 天", "baseConfidence": 0.7 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Corn"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 2, "daysMax": 3, "tips": "保留外葉冷藏，盡快食用", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Egg"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 21, "daysMax": 35, "tips": "尖端朝下放蛋槽，維持低溫", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Milk"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 3, "daysMax": 7, "tips": "開封後 0–4°C 冷藏，盡快飲用", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Yogurt"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "冷藏保存，清潔器具取用", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Cheese"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 7, "daysMax": 14, "tips": "密封冷藏，避免乾裂", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Butter"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 30, "daysMax": 90, "tips": "冷藏保存，取用乾淨餐具", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Tofu"], "storageMode": ["fridge"], "state": ["whole"] }, "result": { "daysMin": 2, "daysMax": 3, "tips": "浸水密封冷藏，每日換水", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Tofu"], "storageMode": ["freezer"], "state": ["whole"] }, "result": { "daysMin": 30, "daysMax": 60, "tips": "冷凍可延長但口感改變", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Chicken_meat"], "storageMode": ["fridge"], "state": ["raw"] }, "result": { "daysMin": 1, "daysMax": 2, "tips": "0–4°C 冷藏，避免接觸熟食", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Chicken_meat"], "storageMode": ["freezer"], "state": ["raw"] }, "result": { "daysMin": 30, "daysMax": 60, "tips": "分裝冷凍，使用前冷藏解凍", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Pork_meat"], "storageMode": ["fridge"], "state": ["raw"] }, "result": { "daysMin": 2, "daysMax": 3, "tips": "密封冷藏，盡快烹調", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Pork_meat"], "storageMode": ["freezer"], "state": ["raw"] }, "result": { "daysMin": 30, "daysMax": 90, "tips": "分裝冷凍，標示日期", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Beef_meat"], "storageMode": ["fridge"], "state": ["raw"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "原包裝冷藏，盡快食用", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Fish"], "storageMode": ["fridge"], "state": ["raw"] }, "result": { "daysMin": 1, "daysMax": 2, "tips": "低溫冷藏，當日烹調最佳", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Shrimp"], "storageMode": ["freezer"], "state": ["raw"] }, "result": { "daysMin": 30, "daysMax": 90, "tips": "冷凍保存，使用前冷藏解凍", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Ham_sliced"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "開封後密封冷藏", "baseConfidence": 0.85 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Bacon"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "密封冷藏，盡快加熱食用", "baseConfidence": 0.85 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Sausage"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 5, "daysMax": 7, "tips": "密封冷藏", "baseConfidence": 0.85 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Rice_cooked"], "storageMode": ["fridge"], "state": ["cooked"] }, "result": { "daysMin": 1, "daysMax": 2, "tips": "密封冷藏，食用前徹底加熱", "baseConfidence": 0.9 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Rice_cooked"], "storageMode": ["freezer"], "state": ["cooked"] }, "result": { "daysMin": 30, "daysMax": 60, "tips": "分裝冷凍，微波或蒸熱", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Bread"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 3, "daysMax": 4, "tips": "密封陰涼，勿冷藏避免回生", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Bread"], "storageMode": ["freezer"], "state": ["whole"] }, "result": { "daysMin": 14, "daysMax": 30, "tips": "冷凍保存，食用前加熱", "baseConfidence": 0.9 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Kimchi"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 14, "daysMax": 30, "tips": "密封冷藏，取用乾淨餐具", "baseConfidence": 0.85 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Miso_paste"], "storageMode": ["fridge"], "state": ["opened"] }, "result": { "daysMin": 60, "daysMax": 180, "tips": "冷藏避光，避免受潮", "baseConfidence": 0.85 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Soy_sauce"], "storageMode": ["room"], "state": ["opened"] }, "result": { "daysMin": 60, "daysMax": 180, "tips": "陰涼避光；開封後冷藏更佳", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Cooking_oil"], "storageMode": ["room"], "state": ["opened"] }, "result": { "daysMin": 90, "daysMax": 180, "tips": "避光密封，防止氧化", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Vinegar"], "storageMode": ["room"], "state": ["opened"] }, "result": { "daysMin": 180, "daysMax": 365, "tips": "密封避光，可長期保存", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Salt"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 9999, "daysMax": 9999, "tips": "無保存期限，防潮即可", "baseConfidence": 1.0 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Sugar"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 9999, "daysMax": 9999, "tips": "密封防潮保存", "baseConfidence": 1.0 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Flour"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 60, "daysMax": 90, "tips": "密封防蟲；潮濕建議冷藏", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Rice_uncooked"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 90, "daysMax": 180, "tips": "陰涼乾燥，避免米蟲", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Pasta"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 180, "daysMax": 365, "tips": "乾燥密封保存", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Noodle_fresh"], "storageMode": ["fridge"], "state": ["raw"] }, "result": { "daysMin": 3, "daysMax": 5, "tips": "密封冷藏，盡快食用", "baseConfidence": 0.8 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Seaweed_dried"], "storageMode": ["room"], "state": ["whole"] }, "result": { "daysMin": 365, "daysMax": 720, "tips": "乾燥避光密封", "baseConfidence": 0.8 } },
+
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Dumpling"], "storageMode": ["freezer"], "state": ["raw"] }, "result": { "daysMin": 30, "daysMax": 60, "tips": "冷凍保存，煮食前不需解凍", "baseConfidence": 0.85 } },
+  { "enabled": true, "priority": 10, "conditions": { "itemKey": ["Ice_cream"], "storageMode": ["freezer"], "state": ["opened"] }, "result": { "daysMin": 30, "daysMax": 60, "tips": "冷凍 -18°C，避免溫度波動", "baseConfidence": 0.85 } },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["room"], "state": ["whole"] },
+    "result": { "daysMin": 180, "daysMax": 365, "tips": "乾燥密封、避光防潮；高溫潮濕環境壽命會縮短", "baseConfidence": 0.85 }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["room"], "state": ["opened"] },
+    "result": { "daysMin": 30, "daysMax": 90, "tips": "開封後請密封防潮，建議1–3個月內用完", "baseConfidence": 0.8 }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["fridge"], "state": ["opened"] },
+    "result": { "daysMin": 60, "daysMax": 120, "tips": "開封後可冷藏防潮防氧化，仍建議盡快食用", "baseConfidence": 0.7 }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["fridge"], "state": ["cooked"] },
+    "result": { "daysMin": 1, "daysMax": 2, "tips": "熟麵易軟化吸水，冷藏 1–2 天內食用並徹底加熱", "baseConfidence": 0.9 }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["freezer"], "state": ["cooked"] },
+    "result": { "daysMin": 14, "daysMax": 30, "tips": "可分裝冷凍，但口感會變；解凍後需完全加熱", "baseConfidence": 0.75 }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": { "itemKey": ["Instant_noodle"], "storageMode": ["freezer"], "state": ["whole"] },
+    "result": { "daysMin": 0, "daysMax": 0, "tips": "不建議把乾麵冷凍，常溫密封即可", "baseConfidence": 0.6 }
+  }
+]
