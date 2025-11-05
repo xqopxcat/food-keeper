@@ -83,7 +83,7 @@ const nameToItemKey = [
   { match: /冰淇淋|ice.*cream/i, itemKey: 'Ice_cream' },
   
   // === 零食 ===
-  { match: /餅乾|cookies/i, itemKey: 'Snack' },
+  { match: /餅乾|泡芙|puff|cookies/i, itemKey: 'Snack' },
   { match: /薯片|potato.*chips/i, itemKey: 'Snack' },
   { match: /巧克力|chocolate/i, itemKey: 'Chocolate' },
 ];

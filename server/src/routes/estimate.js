@@ -63,6 +63,7 @@ router.post('/estimate', async (req, res) => {
   // 5) 可選：存檔（入庫）
   if (save) {
     await Item.create({
+      userId: '',
       barcode: payload.barcode, name: payload.name, brand: payload.brand,
       itemKey, storageMode, state, container, season, locale,
       acquiredAt: now,

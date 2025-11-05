@@ -4,6 +4,7 @@ import { lookupByBarcode, subscribePush, sendTestPush } from './api.js';
 import { ean13CheckDigit, isValidEan13, normalizeToEan13 } from './utils/ean.js';
 import { estimateShelfLife } from './api.js';
 import { inferDefaultsFromProduct } from './inferDefaults.js';
+import { foodOptions } from './constants';
 
 
 export default function App() {
@@ -19,6 +20,19 @@ export default function App() {
   const [manualInput, setManualInput] = useState('');
   const [calcOutput, setCalcOutput] = useState('');
   const [validateMsg, setValidateMsg] = useState('');
+
+  // 食材搜尋狀態
+  const [foodSearch, setFoodSearch] = useState('');
+  const [showFoodDropdown, setShowFoodDropdown] = useState(false);
+
+  // 過濾食材選項
+  const filteredFoodOptions = foodOptions.filter(option =>
+    option.label.toLowerCase().includes(foodSearch.toLowerCase()) ||
+    option.value.toLowerCase().includes(foodSearch.toLowerCase())
+  );
+
+  // 取得當前選中項目的標籤
+  const selectedFoodLabel = foodOptions.find(option => option.value === facts.itemKey)?.label || '';
   
   
   useEffect(() => {
@@ -195,129 +209,135 @@ export default function App() {
         </div>
       )}
       {/* 保存情境（規則需要的 facts） */}
-      <div style={{ marginTop:12 }}>
+      {barcode && (<div style={{ marginTop:12 }}>
         <h3>保存情境</h3>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(160px,1fr))', gap:8 }}>
           <label>
             食材種類 (itemKey)
-            <select value={facts.itemKey} onChange={e => setFacts(f => ({ ...f, itemKey: e.target.value }))}>
-              <option value="">請選擇/或自動推斷</option>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder={facts.itemKey ? selectedFoodLabel : "搜尋食材種類..."}
+                value={foodSearch}
+                onChange={e => {
+                  setFoodSearch(e.target.value);
+                  setShowFoodDropdown(true);
+                }}
+                onFocus={() => setShowFoodDropdown(true)}
+                onBlur={() => {
+                  // 延遲關閉下拉選單，讓點擊選項有時間執行
+                  setTimeout(() => setShowFoodDropdown(false), 200);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
               
-              {/* === 水果類 === */}
-              <optgroup label="🍎 水果類">
-                <option value="Citrus_orange">橘子 / Orange</option>
-                <option value="Apple">蘋果 / Apple</option>
-                <option value="Banana">香蕉 / Banana</option>
-                <option value="Strawberry">草莓 / Strawberry</option>
-                <option value="Blueberry">藍莓 / Blueberry</option>
-                <option value="Grape">葡萄 / Grape</option>
-                <option value="Lemon">檸檬 / Lemon</option>
-                <option value="Lime">萊姆 / Lime</option>
-                <option value="Pineapple">鳳梨 / Pineapple</option>
-                <option value="Watermelon">西瓜 / Watermelon</option>
-                <option value="Avocado">酪梨 / Avocado</option>
-              </optgroup>
-
-              {/* === 蔬菜類 === */}
-              <optgroup label="🥬 蔬菜類">
-                <option value="Tomato">番茄 / Tomato</option>
-                <option value="Cucumber">小黃瓜 / Cucumber</option>
-                <option value="Bell_pepper">甜椒 / Bell Pepper</option>
-                <option value="Spinach">菠菜 / Spinach</option>
-                <option value="Lettuce_leafy">萵苣 / Lettuce</option>
-                <option value="Bok_choy">小白菜 / Bok Choy</option>
-                <option value="Broccoli">花椰菜 / Broccoli</option>
-                <option value="Carrot">紅蘿蔔 / Carrot</option>
-                <option value="Potato">馬鈴薯 / Potato</option>
-                <option value="Onion">洋蔥 / Onion</option>
-                <option value="Ginger">薑 / Ginger</option>
-                <option value="Green_onion">蔥 / Green Onion</option>
-                <option value="Garlic_bulb">蒜頭 / Garlic</option>
-                <option value="Mushroom">菇類 / Mushroom</option>
-                <option value="Corn">玉米 / Corn</option>
-              </optgroup>
-
-              {/* === 乳製品 === */}
-              <optgroup label="🥛 乳製品">
-                <option value="Milk">鮮奶 / Milk</option>
-                <option value="Yogurt">優格 / Yogurt</option>
-                <option value="Cheese">起司 / Cheese</option>
-                <option value="Butter">奶油 / Butter</option>
-              </optgroup>
-
-              {/* === 蛋類 === */}
-              <optgroup label="🥚 蛋類">
-                <option value="Egg">雞蛋 / Egg</option>
-              </optgroup>
-
-              {/* === 豆製品 === */}
-              <optgroup label="🥡 豆製品">
-                <option value="Tofu">豆腐 / Tofu</option>
-              </optgroup>
-
-              {/* === 肉類 === */}
-              <optgroup label="🥩 肉類">
-                <option value="Chicken_meat">雞肉 / Chicken</option>
-                <option value="Pork_meat">豬肉 / Pork</option>
-                <option value="Beef_meat">牛肉 / Beef</option>
-                <option value="Fish">魚 / Fish</option>
-                <option value="Shrimp">蝦 / Shrimp</option>
-              </optgroup>
-
-              {/* === 加工肉品 === */}
-              <optgroup label="🍖 加工肉品">
-                <option value="Ham_sliced">火腿 / Ham</option>
-                <option value="Bacon">培根 / Bacon</option>
-                <option value="Sausage">香腸 / Sausage</option>
-              </optgroup>
-
-              {/* === 主食類 === */}
-              <optgroup label="🍚 主食類">
-                <option value="Rice_uncooked">白米 / Rice</option>
-                <option value="Rice_cooked">熟飯 / Cooked Rice</option>
-                <option value="Bread">麵包 / Bread</option>
-              </optgroup>
-
-              {/* === 麵食類 === */}
-              <optgroup label="🍜 麵食類">
-                <option value="Instant_noodle">泡麵 / Instant Noodle</option>
-                <option value="Pasta">義大利麵 / Pasta</option>
-                <option value="Noodle_fresh">新鮮麵條 / Fresh Noodle</option>
-              </optgroup>
-
-              {/* === 發酵食品 === */}
-              <optgroup label="🥒 發酵食品">
-                <option value="Kimchi">泡菜 / Kimchi</option>
-                <option value="Miso_paste">味噌 / Miso</option>
-              </optgroup>
-
-              {/* === 調味料 === */}
-              <optgroup label="🧂 調味料">
-                <option value="Soy_sauce">醬油 / Soy Sauce</option>
-                <option value="Cooking_oil">食用油 / Cooking Oil</option>
-                <option value="Vinegar">醋 / Vinegar</option>
-                <option value="Salt">鹽 / Salt</option>
-                <option value="Sugar">糖 / Sugar</option>
-              </optgroup>
-
-              {/* === 乾貨類 === */}
-              <optgroup label="🌾 乾貨類">
-                <option value="Flour">麵粉 / Flour</option>
-                <option value="Seaweed_dried">海苔 / Seaweed</option>
-              </optgroup>
-
-              {/* === 冷凍食品 === */}
-              <optgroup label="🥟 冷凍食品">
-                <option value="Dumpling">水餃 / Dumpling</option>
-                <option value="Ice_cream">冰淇淋 / Ice Cream</option>
-              </optgroup>
-              
-              {/* === 零食 === */}
-              <optgroup label="🍫 零食">
-                <option value="Snack">餅乾 / Snack</option>
-                <option value="Chocolate">巧克力 / Chocolate</option>
-              </optgroup>
-            </select>
+              {showFoodDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  zIndex: 1000,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  {/* 清除選項 */}
+                  {facts.itemKey && (
+                    <div
+                      onClick={() => {
+                        setFacts(f => ({ ...f, itemKey: '' }));
+                        setFoodSearch('');
+                        setShowFoodDropdown(false);
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #eee',
+                        color: '#666',
+                        fontStyle: 'italic'
+                      }}
+                      onMouseEnter={e => e.target.style.backgroundColor = '#f5f5f5'}
+                      onMouseLeave={e => e.target.style.backgroundColor = 'white'}
+                    >
+                      清除選擇
+                    </div>
+                  )}
+                  
+                  {/* 過濾後的選項 */}
+                  {filteredFoodOptions.length === 0 ? (
+                    <div style={{ padding: '8px 12px', color: '#999' }}>
+                      找不到符合的食材
+                    </div>
+                  ) : (
+                    (() => {
+                      // 按分類分組
+                      const groupedOptions = filteredFoodOptions.reduce((groups, option) => {
+                        if (!groups[option.category]) groups[option.category] = [];
+                        groups[option.category].push(option);
+                        return groups;
+                      }, {});
+                      
+                      return Object.entries(groupedOptions).map(([category, options]) => (
+                        <div key={category}>
+                          <div style={{
+                            padding: '4px 12px',
+                            backgroundColor: '#f8f9fa',
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                            color: '#666'
+                          }}>
+                            {category}
+                          </div>
+                          {options.map(option => (
+                            <div
+                              key={option.value}
+                              onClick={() => {
+                                setFacts(f => ({ ...f, itemKey: option.value }));
+                                setFoodSearch('');
+                                setShowFoodDropdown(false);
+                              }}
+                              style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                backgroundColor: facts.itemKey === option.value ? '#e3f2fd' : 'white',
+                                fontSize: '14px'
+                              }}
+                              onMouseEnter={e => {
+                                if (facts.itemKey !== option.value) {
+                                  e.target.style.backgroundColor = '#f5f5f5';
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                if (facts.itemKey !== option.value) {
+                                  e.target.style.backgroundColor = 'white';
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </div>
+                          ))}
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+              )}
+            </div>
+            {facts.itemKey && (
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                已選擇: {selectedFoodLabel}
+              </div>
+            )}
           </label>
 
           <label>
@@ -372,7 +392,7 @@ export default function App() {
             <div><b>到期（Max）：</b>{new Date(estimate.expiresMaxAtISO).toLocaleDateString()}</div>
           </div>
         )}
-      </div>
+      </div>)}
     </div>
   );
 }

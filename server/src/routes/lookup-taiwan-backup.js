@@ -19,7 +19,6 @@ async function queryOpenFoodFacts(barcode) {
       quantity: product.quantity || product.serving_size || '',
       category: product.categories || '',
       ingredients: product.ingredients_text || '',
-      nutrition_grade: product.nutrition_grades || '',
       image_url: product.image_front_url || product.image_url || '',
       countries: product.countries || '',
       source: 'openfoodfacts'

@@ -9,7 +9,6 @@ const ProductSchema = new mongoose.Schema({
   // 從外部 API 取得的額外資訊
   category: String,           // 商品分類
   ingredients: String,        // 成分列表
-  nutrition_grade: String,    // 營養評級 (A-E)
   image_url: String,         // 商品圖片 URL
   countries: String,         // 販售國家
   description: String,       // 商品描述
