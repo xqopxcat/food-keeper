@@ -5,7 +5,7 @@ const router = Router();
 
 // 單筆查 OFF product API
 // GET /api/off/lookup?barcode=471xxxxxxx
-router.get('/off/lookup', async (req, res) => {
+router.get('/lookup', async (req, res) => {
   const code = (req.query.barcode || '').trim();
   if (!/^\d{13}$/.test(code)) return res.status(400).json({ error: 'bad code' });
 

@@ -10,11 +10,11 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:you@example.com';
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
-router.get('/push/public-key', (req, res) => {
+router.get('/public-key', (req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });
 
-router.post('/push/subscribe', async (req, res) => {
+router.post('/subscribe', async (req, res) => {
   const sub = req.body;
   if (!sub?.endpoint) return res.status(400).json({ error: 'bad subscription' });
   await PushSubscription.updateOne(
@@ -26,7 +26,7 @@ router.post('/push/subscribe', async (req, res) => {
 });
 
 // 方便測試推播
-router.post('/push/test', async (req, res) => {
+router.post('/test', async (req, res) => {
   const subs = await PushSubscription.find().lean();
   const payload = JSON.stringify({ title: 'Food Keeper', body: '測試推播：今天有食材要先用！' });
   const results = [];

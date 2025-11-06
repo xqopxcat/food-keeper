@@ -65,4 +65,53 @@ export async function lookupOrFallback(code) {
   return r.json();
 }
 
+// 庫存管理 API（統一使用 inventory 路由）
+
+export async function getInventory(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const res = await fetch(`${SERVER}/api/items?${queryString}`);
+  if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function getExpiringItems(days = 3) {
+  const res = await fetch(`${SERVER}/api/inventory/expiring?days=${days}`);
+  if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function getInventoryStats() {
+  const res = await fetch(`${SERVER}/api/inventory/stats`);
+  if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function updateInventoryItem(itemId, updateData) {
+  const res = await fetch(`${SERVER}/api/inventory/${itemId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updateData)
+  });
+  if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function deleteInventoryItem(itemId) {
+  const res = await fetch(`${SERVER}/api/inventory/${itemId}?userId=`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function consumeItems(itemIds) {
+  const res = await fetch(`${SERVER}/api/inventory/consume`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemIds })
+  });
+  if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
 

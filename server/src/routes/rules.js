@@ -6,7 +6,7 @@ const router = Router();
  * POST /api/rules/evaluate
  * body: { itemKey, storageMode, state, container, season, locale }
  */
-router.post('/rules/evaluate', async (req, res) => {
+router.post('/evaluate', async (req, res) => {
   const facts = req.body || {};
   const result = await evaluateShelfLife({
     itemKey: facts.itemKey,

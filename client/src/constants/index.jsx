@@ -87,3 +87,37 @@ export const foodOptions = [
   { category: '🍫 零食', value: 'Snack', label: '餅乾 / Snack' },
   { category: '🍫 零食', value: 'Chocolate', label: '巧克力 / Chocolate' }
 ];
+
+// 單位選項
+export const unitOptions = [
+  { value: '個', label: '個' },
+  { value: '包', label: '包' },
+  { value: '袋', label: '袋' },
+  { value: 'kg', label: '公斤 (kg)' },
+  { value: 'g', label: '公克 (g)' },
+  { value: 'l', label: '公升 (L)' },
+  { value: 'ml', label: '毫升 (ml)' },
+  { value: '片', label: '片' },
+  { value: '條', label: '條' },
+  { value: '罐', label: '罐' },
+  { value: '瓶', label: '瓶' }
+];
+
+// 存放位置選項
+export const locationOptions = [
+  { value: 'fridge_main', label: '冰箱主層', icon: '🧊' },
+  { value: 'fridge_freezer', label: '冷凍庫', icon: '❄️' },
+  { value: 'fridge_door', label: '冰箱門', icon: '🚪' },
+  { value: 'pantry', label: '食品櫃', icon: '🏠' },
+  { value: 'counter', label: '檯面', icon: '🍽️' },
+  { value: 'cabinet', label: '櫥櫃', icon: '🗄️' }
+];
+
+// 緊急程度顏色配置
+export const urgencyConfig = {
+  expired: { color: '#dc2626', label: '已過期', icon: '⚠️' },
+  urgent: { color: '#ea580c', label: '緊急', icon: '🔴' },
+  warning: { color: '#d97706', label: '注意', icon: '🟡' },
+  safe: { color: '#16a34a', label: '安全', icon: '🟢' },
+  unknown: { color: '#6b7280', label: '未知', icon: '❓' }
+};

@@ -32,7 +32,7 @@ async function queryOpenFoodFacts(barcode) {
 // 台灣官方資料庫查詢 (食藥署、經濟部、GS1 Taiwan)
 async function queryTaiwanIntegratedAPI(barcode) {
   try {
-    console.log(`�️ 查詢台灣官方資料庫: ${barcode}`);
+    console.log(`查詢台灣官方資料庫: ${barcode}`);
     
     // 使用整合的台灣商品 API 查詢
     const result = await queryTaiwanProductAPIs(barcode);

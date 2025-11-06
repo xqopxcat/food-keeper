@@ -1,0 +1,360 @@
+import React, { useState, useEffect } from 'react';
+import { getInventory, getExpiringItems, getInventoryStats, updateInventoryItem, deleteInventoryItem, consumeItems } from '../api.js';
+import { urgencyConfig } from '../constants';
+
+export default function InventoryView() {
+  const [inventory, setInventory] = useState([]);
+  const [expiringItems, setExpiringItems] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [filter, setFilter] = useState('all'); // all, fresh, warning, expired
+  const [sortBy, setSortBy] = useState('expiresMaxAt');
+
+  useEffect(() => {
+    loadData();
+  }, [filter, sortBy]);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 載入庫存清單
+      const inventoryParams = {
+        ...(filter !== 'all' && { status: filter }),
+        sortBy,
+        order: sortBy === 'expiryDate' ? 'asc' : 'desc'
+      };
+      const inventoryData = await getInventory(inventoryParams);
+      setInventory(inventoryData.items || []);
+
+      // 載入即將到期項目
+      const expiringData = await getExpiringItems(3);
+      setExpiringItems(expiringData.expiringItems || []);
+
+      // 載入統計資料
+      const statsData = await getInventoryStats();
+      console.log(statsData);
+      setStats(statsData.stats || {});
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleStatusUpdate(itemId, newStatus) {
+    try {
+      await updateInventoryItem(itemId, { status: newStatus });
+      loadData(); // 重新載入資料
+    } catch (err) {
+      alert(`更新失敗: ${err.message}`);
+    }
+  }
+
+  async function handleDeleteItem(itemId) {
+    if (!confirm('確定要刪除這個項目嗎？')) return;
+    
+    try {
+      await deleteInventoryItem(itemId);
+      loadData(); // 重新載入資料
+    } catch (err) {
+      alert(`刪除失敗: ${err.message}`);
+    }
+  }
+
+  async function handleBatchConsume() {
+    if (selectedItems.size === 0) return;
+    
+    try {
+      await consumeItems(Array.from(selectedItems));
+      setSelectedItems(new Set());
+      loadData(); // 重新載入資料
+    } catch (err) {
+      alert(`批量處理失敗: ${err.message}`);
+    }
+  }
+
+  function toggleItemSelection(itemId) {
+    const newSelection = new Set(selectedItems);
+    if (newSelection.has(itemId)) {
+      newSelection.delete(itemId);
+    } else {
+      newSelection.add(itemId);
+    }
+    setSelectedItems(newSelection);
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const today = new Date();
+    const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return '今天';
+    if (diffDays === 1) return '明天';
+    if (diffDays === -1) return '昨天';
+    if (diffDays > 0) return `${diffDays} 天後`;
+    return `${Math.abs(diffDays)} 天前`;
+  }
+
+  if (loading) return <div style={{ padding: 20 }}>載入中...</div>;
+  if (error) return <div style={{ padding: 20, color: 'red' }}>錯誤: {error}</div>;
+
+  return (
+    <div style={{ padding: 20, fontFamily: 'ui-sans-serif, system-ui' }}>
+      <h2>📦 我的食材庫存</h2>
+
+      {/* 統計卡片 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
+        <div style={{ padding: 16, backgroundColor: '#f0f9ff', borderRadius: 8, border: '1px solid #e0f2fe' }}>
+          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#0369a1' }}>{stats.total || 0}</div>
+          <div style={{ color: '#0284c7', fontSize: 14 }}>總項目</div>
+        </div>
+        
+        <div style={{ padding: 16, backgroundColor: '#f0fdf4', borderRadius: 8, border: '1px solid #dcfce7' }}>
+          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#16a34a' }}>{stats.available || 0}</div>
+          <div style={{ color: '#15803d', fontSize: 14 }}>可用庫存</div>
+        </div>
+        
+        <div style={{ padding: 16, backgroundColor: '#fef3c7', borderRadius: 8, border: '1px solid #fde68a' }}>
+          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#d97706' }}>{stats.warning || 0}</div>
+          <div style={{ color: '#b45309', fontSize: 14 }}>即將到期</div>
+        </div>
+        
+        <div style={{ padding: 16, backgroundColor: '#fee2e2', borderRadius: 8, border: '1px solid #fecaca' }}>
+          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#dc2626' }}>{stats.expired || 0}</div>
+          <div style={{ color: '#b91c1c', fontSize: 14 }}>已過期</div>
+        </div>
+        
+        <div style={{ padding: 16, backgroundColor: '#f3f4f6', borderRadius: 8, border: '1px solid #d1d5db' }}>
+          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#10b981' }}>{stats.consumed || 0}</div>
+          <div style={{ color: '#059669', fontSize: 14 }}>已消耗</div>
+        </div>
+      </div>
+
+      {/* 即將到期提醒 */}
+      {expiringItems.length > 0 && (
+        <div style={{ 
+          padding: 16, 
+          backgroundColor: '#fef3c7', 
+          borderRadius: 8, 
+          border: '1px solid #fde68a',
+          marginBottom: 16
+        }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#92400e' }}>⚠️ 即將到期提醒</h3>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {expiringItems.slice(0, 3).map((item, index) => (
+              <div key={item._id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{item.name} ({item.quantity?.amount || 1} {item.quantity?.unit || '個'})</span>
+                <span style={{ color: urgencyConfig[item.urgency]?.color || '#666' }}>
+                  {formatDate(item.expiresMaxAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 篩選和排序控制 */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div>
+          <label style={{ marginRight: 8 }}>篩選:</label>
+          <select value={filter} onChange={e => setFilter(e.target.value)}>
+            <option value="all">全部</option>
+            <option value="fresh">新鮮</option>
+            <option value="warning">即將到期</option>
+            <option value="expired">已過期</option>
+            <option value="consumed">已消耗</option>
+          </select>
+        </div>
+        
+        <div>
+          <label style={{ marginRight: 8 }}>排序:</label>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <option value="expiresMaxAt">到期日</option>
+            <option value="acquiredAt">加入時間</option>
+            <option value="name">名稱</option>
+          </select>
+        </div>
+        
+        {selectedItems.size > 0 && (
+          <button 
+            onClick={handleBatchConsume}
+            style={{ 
+              backgroundColor: '#10b981', 
+              color: 'white', 
+              border: 'none', 
+              padding: '8px 16px', 
+              borderRadius: '4px' 
+            }}
+          >
+            標記已消耗 ({selectedItems.size})
+          </button>
+        )}
+      </div>
+
+      {/* 庫存清單 */}
+      <div style={{ display: 'grid', gap: 12 }}>
+        {inventory.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: 40, 
+            color: '#6b7280',
+            border: '2px dashed #d1d5db',
+            borderRadius: 8 
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
+            <div>目前沒有庫存項目</div>
+            <div style={{ fontSize: 14, marginTop: 8 }}>掃描或手動添加食材來建立你的庫存</div>
+          </div>
+        ) : (
+          inventory.map(item => (
+            <div 
+              key={item._id} 
+              style={{
+                padding: 16,
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                backgroundColor: item.status === 'consumed' ? '#f9fafb' : 'white',
+                borderLeftWidth: 4,
+                borderLeftColor: item.status === 'consumed' ? '#9ca3af' : (urgencyConfig[item.urgency]?.color || '#e5e7eb'),
+                opacity: item.status === 'consumed' ? 0.7 : 1
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={selectedItems.has(item._id)}
+                  onChange={() => toggleItemSelection(item._id)}
+                  disabled={item.status === 'consumed'}
+                />
+                
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <h4 style={{ 
+                          margin: 0, 
+                          fontSize: 16,
+                          textDecoration: item.status === 'consumed' ? 'line-through' : 'none'
+                        }}>
+                          {item.name}
+                        </h4>
+                        {item.status === 'consumed' && (
+                          <span style={{
+                            fontSize: 12,
+                            padding: '2px 8px',
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            borderRadius: '12px',
+                            fontWeight: 'bold'
+                          }}>
+                            ✅ 已消耗
+                          </span>
+                        )}
+                      </div>
+                      {item.brand && <div style={{ fontSize: 14, color: '#6b7280' }}>{item.brand}</div>}
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>
+                        {item.quantity?.amount || 1} {item.quantity?.unit || '個'} • {item.location?.replace('_', ' ') || 'unknown'} • {item.storageMode}
+                      </div>
+                    </div>
+                    
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ 
+                        fontSize: 14, 
+                        fontWeight: 'bold',
+                        color: urgencyConfig[item.urgency]?.color || '#666'
+                      }}>
+                        {urgencyConfig[item.urgency]?.icon} {formatDate(item.expiresMaxAt)}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>
+                        {item.daysLeft !== null ? 
+                          (item.daysLeft >= 0 ? `還有 ${item.daysLeft} 天` : `過期 ${Math.abs(item.daysLeft)} 天`) : 
+                          '未知'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {item.notes && (
+                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>
+                      💭 {item.notes}
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    {item.status === 'consumed' ? (
+                      <>
+                        <button 
+                          onClick={() => handleStatusUpdate(item._id, 'fresh')}
+                          style={{ 
+                            padding: '4px 8px', 
+                            fontSize: 12, 
+                            backgroundColor: '#3b82f6', 
+                            color: 'white',
+                            border: 'none', 
+                            borderRadius: '4px' 
+                          }}
+                        >
+                          恢復庫存
+                        </button>
+                        
+                        <button 
+                          onClick={() => handleDeleteItem(item._id)}
+                          style={{ 
+                            padding: '4px 8px', 
+                            fontSize: 12, 
+                            backgroundColor: '#ef4444', 
+                            color: 'white',
+                            border: 'none', 
+                            borderRadius: '4px' 
+                          }}
+                        >
+                          刪除
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => handleStatusUpdate(item._id, 'consumed')}
+                          style={{ 
+                            padding: '4px 8px', 
+                            fontSize: 12, 
+                            backgroundColor: '#10b981', 
+                            color: 'white',
+                            border: 'none', 
+                            borderRadius: '4px' 
+                          }}
+                        >
+                          標記已消耗
+                        </button>
+                        
+                        <button 
+                          onClick={() => handleDeleteItem(item._id)}
+                          style={{ 
+                            padding: '4px 8px', 
+                            fontSize: 12, 
+                            backgroundColor: '#ef4444', 
+                            color: 'white',
+                            border: 'none', 
+                            borderRadius: '4px' 
+                          }}
+                        >
+                          刪除
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

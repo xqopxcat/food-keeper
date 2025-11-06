@@ -57,7 +57,7 @@ async function queryUPCDatabase(barcode) {
   }
 }
 
-router.get('/lookup', async (req, res) => {
+router.get('/', async (req, res) => {
   const barcode = (req.query.barcode || '').trim();
   if (!barcode) return res.status(400).json({ error: 'barcode required' });
 

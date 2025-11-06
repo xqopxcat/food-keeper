@@ -19,12 +19,14 @@ const router = Router();
  *   save?: boolean               // true 的話順便存 Item（可選）
  * }
  */
-router.post('/estimate', async (req, res) => {
+router.post('/', async (req, res) => {
   const {
     barcode, manualName,
     itemKey, storageMode, state,
     container = 'none', season = 'summer', locale = 'TW',
-    save = false
+    save = false,
+    // 新增的庫存管理欄位
+    quantity, purchaseDate, location, source = 'manual', notes, tags
   } = req.body || {};
 
   if (!itemKey || !storageMode || !state) {
@@ -62,16 +64,31 @@ router.post('/estimate', async (req, res) => {
 
   // 5) 可選：存檔（入庫）
   if (save) {
-    await Item.create({
-      userId: '',
-      barcode: payload.barcode, name: payload.name, brand: payload.brand,
+    const itemData = {
+      userId: '', // 暫時使用 ''
+      barcode: payload.barcode, 
+      name: payload.name, 
+      brand: payload.brand,
       itemKey, storageMode, state, container, season, locale,
       acquiredAt: now,
       expiresMinAt, expiresMaxAt,
-      daysMin: result.daysMin, daysMax: result.daysMax,
-      tips: result.tips, confidence: result.confidence, ruleId: result.ruleId
-    });
+      daysMin: result.daysMin, 
+      daysMax: result.daysMax,
+      tips: result.tips, 
+      confidence: result.confidence, 
+      ruleId: result.ruleId,
+      // 新增庫存欄位
+      quantity: quantity || { amount: 1, unit: '個' },
+      purchaseDate: purchaseDate ? new Date(purchaseDate) : now,
+      location: location || 'fridge_main',
+      source: barcode ? 'barcode' : source,
+      notes: notes || '',
+      tags: tags || []
+    };
+    
+    const savedItem = await Item.create(itemData);
     payload.saved = true;
+    payload.itemId = savedItem._id;
   }
 
   res.json(payload);
