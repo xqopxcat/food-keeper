@@ -97,7 +97,8 @@ const ScannerView = () => {
         barcode,
         manualName: result?.product?.name,
         ...facts,
-        save
+        save,
+        purchaseDate: inventoryData.purchaseDate
       };
       
       const data = await estimateShelfLife(payload).unwrap();
@@ -516,14 +517,6 @@ const ScannerView = () => {
             >
               📊 估算保存期限
             </button>
-
-            <button 
-              onClick={() => handleEstimate(true)} 
-              disabled={!readyForEstimate || loading}
-            >
-              💾 估算並入庫
-            </button>
-
             <button 
               onClick={handleAddToInventory}
               disabled={!facts.itemKey || loading}
@@ -557,9 +550,15 @@ const ScannerView = () => {
             <div style={{ marginTop:10, padding:10, border:'1px dashed #aaa', borderRadius:8 }}>
               <div><b>估算天數：</b>{estimate.daysMin}–{estimate.daysMax} 天（信心 {Math.round(estimate.confidence*100)}%）</div>
               <div><b>建議：</b>{estimate.tips || '—'}</div>
-              {estimate.nowISO && <div><b>入庫時間：</b>{new Date(estimate.nowISO).toLocaleString()}</div>}
-              {estimate.expiresMinAtISO && <div><b>到期（Min）：</b>{new Date(estimate.expiresMinAtISO).toLocaleDateString()}</div>}
-              {estimate.expiresMaxAtISO && <div><b>到期（Max）：</b>{new Date(estimate.expiresMaxAtISO).toLocaleDateString()}</div>}
+              {estimate.baseDateISO && (
+                <div style={{ color: estimate.usingPurchaseDate ? '#059669' : '#6b7280' }}>
+                  <b>計算基準：</b>
+                  {new Date(estimate.baseDateISO).toLocaleDateString()} 
+                  {estimate.usingPurchaseDate ? ' (購買日期)' : ' (當前日期)'}
+                </div>
+              )}
+              {estimate.expiresMinAtISO && <div><b>最短保存期：</b>{new Date(estimate.expiresMinAtISO).toLocaleDateString()}</div>}
+              {estimate.expiresMaxAtISO && <div><b>最長保存期：</b>{new Date(estimate.expiresMaxAtISO).toLocaleDateString()}</div>}
               {estimate.saved && (
                 <div style={{ color: '#059669', fontWeight: 'bold' }}>
                   ✅ 已成功加入庫存

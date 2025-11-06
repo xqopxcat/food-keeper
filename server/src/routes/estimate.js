@@ -44,9 +44,10 @@ router.post('/', async (req, res) => {
   const result = await evaluateShelfLife({ itemKey, storageMode, state, container, season, locale });
   if (!result) return res.status(404).json({ error: 'NO_RULE_MATCH' });
 
-  // 3) 算出日期（用 now + daysMin/Max；若 state=opened 可視需求再縮短係數）
+  // 3) 算出日期（以 purchaseDate 為基準，若無則用當前時間）
   const now = new Date();
-  const addDays = (d) => new Date(now.getTime() + d * 24*60*60*1000);
+  const baseDate = purchaseDate ? new Date(purchaseDate) : now;
+  const addDays = (d) => new Date(baseDate.getTime() + d * 24*60*60*1000);
   const expiresMinAt = addDays(result.daysMin || 0);
   const expiresMaxAt = addDays(result.daysMax || 0);
 
@@ -58,8 +59,10 @@ router.post('/', async (req, res) => {
     daysMin: result.daysMin, daysMax: result.daysMax,
     tips: result.tips, confidence: result.confidence, ruleId: result.ruleId,
     nowISO: now.toISOString(),
+    baseDateISO: baseDate.toISOString(), // 計算基準日期
     expiresMinAtISO: expiresMinAt.toISOString(),
-    expiresMaxAtISO: expiresMaxAt.toISOString()
+    expiresMaxAtISO: expiresMaxAt.toISOString(),
+    usingPurchaseDate: !!purchaseDate // 是否使用了購買日期
   };
 
   // 5) 可選：存檔（入庫）
