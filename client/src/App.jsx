@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navigation from './components/Navigation';
-import ScannerView from './pages/ScannerView';
-import InventoryView from './pages/InventoryView';
+import ScannerViewRTK from './pages/ScannerView';
+import InventoryViewRTK from './pages/InventoryView';
 
 
 export default function App() {
@@ -11,8 +11,8 @@ export default function App() {
       <div style={{ fontFamily:'ui-sans-serif, system-ui' }}>
         <Navigation />
         <Routes>
-          <Route path="/scanner" element={<ScannerView />} />
-          <Route path="/inventory" element={<InventoryView />} />
+          <Route path="/scanner" element={<ScannerViewRTK />} />
+          <Route path="/inventory" element={<InventoryViewRTK />} />
           <Route path="*" element={<Navigate to="/scanner" replace />} />
         </Routes>
       </div>

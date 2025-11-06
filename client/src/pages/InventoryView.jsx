@@ -1,57 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { getInventory, getExpiringItems, getInventoryStats, updateInventoryItem, deleteInventoryItem, consumeItems } from '../api.js';
+import React, { useState } from 'react';
+import { 
+  useGetInventoryQuery,
+  useGetExpiringItemsQuery,
+  useGetInventoryStatsQuery,
+  useUpdateInventoryItemMutation,
+  useDeleteInventoryItemMutation,
+  useConsumeItemsMutation
+} from '../redux/services/foodCoreAPI';
 import { urgencyConfig } from '../constants';
 
-export default function InventoryView() {
-  const [inventory, setInventory] = useState([]);
-  const [expiringItems, setExpiringItems] = useState([]);
-  const [stats, setStats] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const InventoryView = () => {
   const [selectedItems, setSelectedItems] = useState(new Set());
-  const [filter, setFilter] = useState('all'); // all, fresh, warning, expired
+  const [filter, setFilter] = useState('all'); // all, fresh, warning, expired, consumed, available
   const [sortBy, setSortBy] = useState('expiresMaxAt');
 
-  useEffect(() => {
-    loadData();
-  }, [filter, sortBy]);
+  // RTK Query hooks
+  const inventoryParams = {
+    ...(filter !== 'all' && { status: filter }),
+    sortBy,
+    order: sortBy === 'expiryDate' ? 'asc' : 'desc'
+  };
+  
+  const {
+    data: inventoryData,
+    isLoading: inventoryLoading,
+    error: inventoryError
+  } = useGetInventoryQuery(inventoryParams);
 
-  async function loadData() {
-    try {
-      setLoading(true);
-      setError(null);
+  const {
+    data: expiringData,
+    isLoading: expiringLoading,
+  } = useGetExpiringItemsQuery(3);
 
-      // 載入庫存清單
-      const inventoryParams = {
-        ...(filter !== 'all' && { status: filter }),
-        sortBy,
-        order: sortBy === 'expiryDate' ? 'asc' : 'desc'
-      };
-      const inventoryData = await getInventory(inventoryParams);
-      setInventory(inventoryData.items || []);
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+  } = useGetInventoryStatsQuery();
 
-      // 載入即將到期項目
-      const expiringData = await getExpiringItems(3);
-      setExpiringItems(expiringData.expiringItems || []);
+  // Mutations
+  const [updateInventoryItem] = useUpdateInventoryItemMutation();
+  const [deleteInventoryItem] = useDeleteInventoryItemMutation();
+  const [consumeItems] = useConsumeItemsMutation();
 
-      // 載入統計資料
-      const statsData = await getInventoryStats();
-      console.log(statsData);
-      setStats(statsData.stats || {});
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  // 處理函數
   async function handleStatusUpdate(itemId, newStatus) {
     try {
-      await updateInventoryItem(itemId, { status: newStatus });
-      loadData(); // 重新載入資料
+      await updateInventoryItem({ itemId, updateData: { status: newStatus } }).unwrap();
     } catch (err) {
-      alert(`更新失敗: ${err.message}`);
+      alert(`更新失敗: ${err.message || '未知錯誤'}`);
     }
   }
 
@@ -59,10 +55,9 @@ export default function InventoryView() {
     if (!confirm('確定要刪除這個項目嗎？')) return;
     
     try {
-      await deleteInventoryItem(itemId);
-      loadData(); // 重新載入資料
+      await deleteInventoryItem(itemId).unwrap();
     } catch (err) {
-      alert(`刪除失敗: ${err.message}`);
+      alert(`刪除失敗: ${err.message || '未知錯誤'}`);
     }
   }
 
@@ -70,11 +65,10 @@ export default function InventoryView() {
     if (selectedItems.size === 0) return;
     
     try {
-      await consumeItems(Array.from(selectedItems));
+      await consumeItems(Array.from(selectedItems)).unwrap();
       setSelectedItems(new Set());
-      loadData(); // 重新載入資料
     } catch (err) {
-      alert(`批量處理失敗: ${err.message}`);
+      alert(`批量處理失敗: ${err.message || '未知錯誤'}`);
     }
   }
 
@@ -101,8 +95,23 @@ export default function InventoryView() {
     return `${Math.abs(diffDays)} 天前`;
   }
 
-  if (loading) return <div style={{ padding: 20 }}>載入中...</div>;
-  if (error) return <div style={{ padding: 20, color: 'red' }}>錯誤: {error}</div>;
+  // 載入狀態
+  const isLoading = inventoryLoading || expiringLoading || statsLoading;
+  
+  // 錯誤處理
+  if (inventoryError) {
+    return <div style={{ padding: 20, color: 'red' }}>錯誤: {inventoryError.message || '載入失敗'}</div>;
+  }
+
+  // 載入中
+  if (isLoading) {
+    return <div style={{ padding: 20 }}>載入中...</div>;
+  }
+
+  // 數據處理
+  const inventory = inventoryData?.items || [];
+  const expiringItems = expiringData?.expiringItems || [];
+  const stats = statsData?.stats || {};
 
   return (
     <div style={{ padding: 20, fontFamily: 'ui-sans-serif, system-ui' }}>
@@ -165,6 +174,7 @@ export default function InventoryView() {
           <label style={{ marginRight: 8 }}>篩選:</label>
           <select value={filter} onChange={e => setFilter(e.target.value)}>
             <option value="all">全部</option>
+            <option value="available">可用庫存</option>
             <option value="fresh">新鮮</option>
             <option value="warning">即將到期</option>
             <option value="expired">已過期</option>
@@ -358,3 +368,5 @@ export default function InventoryView() {
     </div>
   );
 }
+
+export default InventoryView;
