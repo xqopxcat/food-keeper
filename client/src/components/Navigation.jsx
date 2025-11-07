@@ -32,6 +32,21 @@ const Navigation = () => {
           📷 掃描
         </Link>
         <Link
+          to="/ai"
+          style={{
+            padding: '6px 12px',
+            backgroundColor: currentPath === '/ai' ? '#3b82f6' : 'transparent',
+            color: 'white',
+            border: '1px solid #6b7280',
+            borderRadius: '6px',
+            textDecoration: 'none',
+            display: 'block',
+            fontSize: '14px'
+          }}
+        >
+          🤖 AI識別
+        </Link>
+        <Link
           to="/inventory"
           style={{
             padding: '6px 12px',

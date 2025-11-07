@@ -16,8 +16,12 @@ export const foodCoreAPI = createApi({
   reducerPath: 'foodCoreAPI',
   baseQuery: fetchBaseQuery({
     baseUrl: `${SERVER}/api`,
-    prepareHeaders: (headers) => {
-      headers.set('Content-Type', 'application/json');
+    prepareHeaders: (headers, { endpoint }) => {
+      // 對於檔案上傳的端點，不設置 Content-Type，讓瀏覽器自動設置
+      const formDataEndpoints = ['identifyFoodItemsFile', 'extractTextFromImageFile', 'batchIdentifyFoodItems'];
+      if (!formDataEndpoints.includes(endpoint)) {
+        headers.set('Content-Type', 'application/json');
+      }
       return headers;
     },
   }),
@@ -116,6 +120,76 @@ export const foodCoreAPI = createApi({
       }),
       invalidatesTags: ['Item', 'Stats'],
     }),
+
+    // AI 物品識別相關 API
+
+    // AI 物品識別 - 使用 base64 圖片
+    identifyFoodItems: builder.mutation({
+      query: ({ imageBase64, options = {} }) => ({
+        url: 'ai/identify',
+        method: 'POST',
+        body: { imageBase64, options },
+      }),
+    }),
+
+    // AI 物品識別 - 使用 FormData (檔案上傳)
+    identifyFoodItemsFile: builder.mutation({
+      query: ({ file, options = {} }) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        if (Object.keys(options).length > 0) {
+          formData.append('options', JSON.stringify(options));
+        }
+        return {
+          url: 'ai/identify',
+          method: 'POST',
+          body: formData,
+        };
+      },
+    }),
+
+    // AI OCR 文字識別
+    extractTextFromImage: builder.mutation({
+      query: ({ imageBase64 }) => ({
+        url: 'ai/ocr',
+        method: 'POST',
+        body: { imageBase64 },
+      }),
+    }),
+
+    // AI OCR 文字識別 - 使用檔案
+    extractTextFromImageFile: builder.mutation({
+      query: ({ file }) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        return {
+          url: 'ai/ocr',
+          method: 'POST',
+          body: formData,
+        };
+      },
+    }),
+
+    // 批量 AI 識別
+    batchIdentifyFoodItems: builder.mutation({
+      query: ({ files, options = {} }) => {
+        const formData = new FormData();
+        files.forEach(file => formData.append('images', file));
+        if (Object.keys(options).length > 0) {
+          formData.append('options', JSON.stringify(options));
+        }
+        return {
+          url: 'ai/batch-identify',
+          method: 'POST',
+          body: formData,
+        };
+      },
+    }),
+
+    // 檢查 AI 服務狀態
+    getAiStatus: builder.query({
+      query: () => 'ai/status',
+    }),
   }),
 });
 
@@ -133,6 +207,14 @@ export const {
   useDeleteInventoryItemMutation,
   useConsumeItemsMutation,
   useAddInventoryItemMutation,
+  
+  // AI 識別相關 hooks
+  useIdentifyFoodItemsMutation,
+  useIdentifyFoodItemsFileMutation,
+  useExtractTextFromImageMutation,
+  useExtractTextFromImageFileMutation,
+  useBatchIdentifyFoodItemsMutation,
+  useGetAiStatusQuery,
   
   // 其他
   util: { invalidateTags },

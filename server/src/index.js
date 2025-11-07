@@ -10,6 +10,7 @@ import estimateRoute from './routes/estimate.js';
 import offLookupRoute from './routes/offLookup.js';
 import inventoryRoute from './routes/inventory.js';
 import itemsRoute from './routes/items.js';
+import aiRoute from './routes/ai.js';
 
 const app = express();
 app.use(cors());
@@ -26,6 +27,7 @@ app.use('/api/estimate', estimateRoute);
 app.use('/api/off', offLookupRoute);
 app.use('/api/inventory', inventoryRoute);
 app.use('/api/items', itemsRoute);
+app.use('/api/ai', aiRoute);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));
