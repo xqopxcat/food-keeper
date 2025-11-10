@@ -1,4 +1,6 @@
 import { ImageAnnotatorClient } from '@google-cloud/vision';
+import { inferDefaultsFromProduct } from './inferDefaults.js';
+import { evaluateShelfLife } from './shelfLife.js';
 
 // 初始化 Google Vision 客戶端
 const vision = new ImageAnnotatorClient({
@@ -12,7 +14,7 @@ const vision = new ImageAnnotatorClient({
  * @param {object} options - 識別選項
  * @returns {Promise<object>} 識別結果
  */
-export async function identifyFoodItemsGoogle(imageBase64, options = {}) {
+const identifyFoodItemsGoogle = async (imageBase64, options = {}) => {
   if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     throw new Error('Google Vision API credentials not configured');
   }
@@ -83,8 +85,8 @@ export async function identifyFoodItemsGoogle(imageBase64, options = {}) {
     
     // 處理識別到的物體
     const processedObjects = new Set();
-    
-    objects.forEach(object => {
+
+    objects.forEach(async (object) => {
       const name = object.name;
       if (processedObjects.has(name)) return;
       processedObjects.add(name);
@@ -97,28 +99,65 @@ export async function identifyFoodItemsGoogle(imageBase64, options = {}) {
       const storageMode = inferStorageMode(name);
       
       if (itemKey || category) {
+        // 使用 inferDefaults 來獲取更準確的 itemKey 和 storageMode
+        const productForInfer = {
+          name: translateToTraditionalChinese(name),
+          brand: extractBrand(texts),
+          category: category
+        };
+        
+        const inferredDefaults = inferDefaultsFromProduct(productForInfer);
+        const finalItemKey = (inferredDefaults && inferredDefaults.itemKey) || itemKey;
+        const finalStorageMode = (inferredDefaults && inferredDefaults.storageMode) || storageMode;
+        const finalState = (inferredDefaults && inferredDefaults.state) || 'whole';
+
+        // 使用保存期限估算服務
+        let shelfLifeResult = null;
+        if (finalItemKey) {
+          try {
+            shelfLifeResult = await evaluateShelfLife({
+              itemKey: finalItemKey,
+              storageMode: finalStorageMode,
+              state: finalState,
+              container: 'none',
+              season: 'summer',
+              locale: 'TW'
+            });
+          } catch (error) {
+            console.warn('Failed to evaluate shelf life:', error);
+          }
+        }
+
         items.push({
           name: translateToTraditionalChinese(name),
           englishName: name,
           category: category,
-          itemKey: itemKey,
-          brand: null,
+          itemKey: finalItemKey,
+          brand: extractBrand(texts),
           quantity: { amount: 1, unit: '個' }, // Google Vision 不擅長數量估算
           confidence: confidence,
-          storageMode: storageMode,
-          state: 'whole',
+          storageMode: finalStorageMode,
+          state: finalState,
           notes: `Google Vision 識別 (${Math.round(confidence * 100)}% 信心度)`,
           packageText: texts.length > 0 ? texts[0].description : null,
           expirationDate: null,
           productCode: extractBarcode(texts),
-          boundingBox: object.boundingPoly // Google Vision 特有的位置資訊
+          boundingBox: object.boundingPoly, // Google Vision 特有的位置資訊
+          // 保存期限資訊
+          shelfLife: shelfLifeResult ? {
+            daysMin: shelfLifeResult.daysMin,
+            daysMax: shelfLifeResult.daysMax,
+            tips: shelfLifeResult.tips,
+            confidence: shelfLifeResult.confidence,
+            ruleId: shelfLifeResult.ruleId
+          } : null
         });
       }
     });
 
     // 如果物體檢測沒有結果，嘗試從標籤推斷
     if (items.length === 0 && foodRelatedLabels.length > 0) {
-      foodRelatedLabels.slice(0, 5).forEach(label => {
+      for (const label of foodRelatedLabels.slice(0, 5)) {
         const name = label.description;
         const confidence = label.score || 0;
         
@@ -126,22 +165,59 @@ export async function identifyFoodItemsGoogle(imageBase64, options = {}) {
         const category = mapToFoodCategory(name);
         const storageMode = inferStorageMode(name);
         
+        // 使用 inferDefaults 來獲取更準確的 itemKey 和 storageMode
+        const productForInfer = {
+          name: translateToTraditionalChinese(name),
+          brand: extractBrand(texts),
+          category: category
+        };
+        
+        const inferredDefaults = inferDefaultsFromProduct(productForInfer);
+        const finalItemKey = (inferredDefaults && inferredDefaults.itemKey) || itemKey;
+        const finalStorageMode = (inferredDefaults && inferredDefaults.storageMode) || storageMode;
+        const finalState = (inferredDefaults && inferredDefaults.state) || 'whole';
+
+        // 使用保存期限估算服務
+        let shelfLifeResult = null;
+        if (finalItemKey) {
+          try {
+            shelfLifeResult = await evaluateShelfLife({
+              itemKey: finalItemKey,
+              storageMode: finalStorageMode,
+              state: finalState,
+              container: 'none',
+              season: 'summer',
+              locale: 'TW'
+            });
+          } catch (error) {
+            console.warn('Failed to evaluate shelf life for label:', error);
+          }
+        }
+        
         items.push({
           name: translateToTraditionalChinese(name),
           englishName: name,
           category: category,
-          itemKey: itemKey,
-          brand: null,
+          itemKey: finalItemKey,
+          brand: extractBrand(texts),
           quantity: { amount: 1, unit: '個' },
           confidence: confidence,
-          storageMode: storageMode,
-          state: 'whole',
+          storageMode: finalStorageMode,
+          state: finalState,
           notes: `從標籤推斷 (${Math.round(confidence * 100)}% 信心度)`,
           packageText: texts.length > 0 ? texts[0].description : null,
           expirationDate: null,
-          productCode: extractBarcode(texts)
+          productCode: extractBarcode(texts),
+          // 保存期限資訊
+          shelfLife: shelfLifeResult ? {
+            daysMin: shelfLifeResult.daysMin,
+            daysMax: shelfLifeResult.daysMax,
+            tips: shelfLifeResult.tips,
+            confidence: shelfLifeResult.confidence,
+            ruleId: shelfLifeResult.ruleId
+          } : null
         });
-      });
+      }
     }
 
     return {
@@ -343,6 +419,23 @@ function extractBarcode(texts) {
   return matches && matches.length > 0 ? matches[0] : null;
 }
 
+// 輔助函數：從 OCR 文字中提取品牌
+function extractBrand(texts) {
+  if (!texts || texts.length === 0) return null;
+  
+  const fullText = texts[0].description;
+  
+  // 台灣常見品牌識別
+  const brands = ['統一', '義美', '味全', '愛之味', '維力', '康師傅', '泰山', '光泉', '林鳳營'];
+  for (const brand of brands) {
+    if (fullText.includes(brand)) {
+      return brand;
+    }
+  }
+  
+  return null;
+}
+
 // 輔助函數：從 OCR 文字提取結構化資訊
 function extractStructuredInfo(text) {
   const result = {
@@ -387,3 +480,5 @@ function extractStructuredInfo(text) {
   
   return result;
 }
+
+export { identifyFoodItemsGoogle };

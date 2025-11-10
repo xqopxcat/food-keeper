@@ -7,12 +7,29 @@ const Camera = ({ onCapture, onError, className = '', style = {} }) => {
   const [facingMode, setFacingMode] = useState('environment'); // 'user' 前鏡頭, 'environment' 後鏡頭
   const [supportedConstraints, setSupportedConstraints] = useState({});
 
+  // 停止相機
+  const stopCamera = useCallback(() => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsStreaming(false);
+  }, []);
+
   // 啟動相機
   const startCamera = useCallback(async () => {
     try {
       // 檢查瀏覽器支援
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('此瀏覽器不支援相機功能');
+      }
+
+      // 如果已經在串流中，先停止
+      if (isStreaming) {
+        stopCamera();
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       // 獲取支援的約束
@@ -24,19 +41,43 @@ const Camera = ({ onCapture, onError, className = '', style = {} }) => {
         video: {
           facingMode: facingMode,
           width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 }
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 30 } // 限制幀率避免閃爍
         },
         audio: false
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       
-      if (videoRef.current) {
+      if (videoRef.current && !isStreaming) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play();
-          setIsStreaming(true);
-        };
+        
+        // 使用 Promise 確保視頻載入完成
+        await new Promise((resolve, reject) => {
+          const video = videoRef.current;
+          if (!video) {
+            reject(new Error('Video element not available'));
+            return;
+          }
+
+          const onCanPlay = () => {
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('error', onError);
+            video.play().then(() => {
+              setIsStreaming(true);
+              resolve();
+            }).catch(reject);
+          };
+
+          const onError = (e) => {
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('error', onError);
+            reject(e);
+          };
+
+          video.addEventListener('canplay', onCanPlay);
+          video.addEventListener('error', onError);
+        });
       }
 
     } catch (error) {
@@ -47,20 +88,10 @@ const Camera = ({ onCapture, onError, className = '', style = {} }) => {
         ? '找不到可用的相機'
         : error.message || '無法啟動相機';
       
+      setIsStreaming(false);
       onError?.(errorMessage);
     }
-  }, [facingMode, onError]);
-
-  // 停止相機
-  const stopCamera = useCallback(() => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject;
-      const tracks = stream.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setIsStreaming(false);
-  }, []);
+  }, [facingMode, onError, isStreaming, stopCamera]);
 
   // 切換前後鏡頭
   const switchCamera = useCallback(() => {
@@ -118,9 +149,10 @@ const Camera = ({ onCapture, onError, className = '', style = {} }) => {
   useEffect(() => {
     if (isStreaming) {
       stopCamera();
-      setTimeout(startCamera, 100);
+      // 增加延遲以確保前一個流完全停止
+      setTimeout(startCamera, 300);
     }
-  }, [facingMode, startCamera, stopCamera, isStreaming]);
+  }, [facingMode]);
 
   return (
     <div className={`camera-container ${className}`} style={style}>

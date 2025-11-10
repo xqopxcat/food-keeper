@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import Camera from '../components/Camera.jsx';
 import { 
-  useIdentifyFoodItemsMutation,
-  useExtractTextFromImageMutation,
-  useGetAiStatusQuery 
+  useIdentifyFoodItemsMutation, 
+  useExtractTextFromImageMutation, 
+  useGetAiStatusQuery,
+  useAddInventoryItemMutation 
 } from '../redux/services/foodCoreAPI';
+import { inferDefaultsFromProduct } from '../inferDefaults.js';
 import { foodOptions } from '../constants/index.jsx';
 
 const AiIdentificationView = () => {
@@ -16,6 +18,7 @@ const AiIdentificationView = () => {
   // RTK Query hooks
   const [identifyFood, { isLoading: isIdentifying }] = useIdentifyFoodItemsMutation();
   const [extractText, { isLoading: isExtracting }] = useExtractTextFromImageMutation();
+  const [addInventoryItem, { isLoading: isAdding }] = useAddInventoryItemMutation();
   const { data: aiStatus } = useGetAiStatusQuery();
 
   // 處理拍照結果
@@ -105,10 +108,62 @@ const AiIdentificationView = () => {
 
   // 添加識別的食材到庫存
   const addToInventory = async (item) => {
-    // 這裡會跳轉到掃描頁面並預填資料
-    // 或者直接在這裡開啟一個模態框進行庫存添加
-    console.log('Adding to inventory:', item);
-    // 實現邏輯待後續完善
+    try {
+      console.log('Adding to inventory:', item);
+      
+      // 如果已經有保存期限資訊就直接使用，否則使用 inferDefaults
+      let itemKey = item.itemKey;
+      let storageMode = item.storageMode;
+      let state = item.state || 'whole';
+      
+      // 如果沒有 itemKey，嘗試使用 inferDefaults
+      if (!itemKey) {
+        const inferred = inferDefaultsFromProduct({
+          name: item.name,
+          brand: item.brand,
+          category: item.category
+        });
+        
+        if (inferred) {
+          itemKey = inferred.itemKey;
+          storageMode = inferred.storageMode;
+          state = inferred.state;
+        }
+      }
+
+      // 構建新增庫存的資料
+      const inventoryData = {
+        itemKey: itemKey || `AI_${Date.now()}`, // 如果還是沒有 itemKey，生成一個唯一的
+        name: item.name || item.englishName || '未知食材',
+        brand: item.brand || null,
+        quantity: item.quantity || { amount: 1, unit: '個' },
+        purchaseDate: new Date().toISOString().split('T')[0], // 今天的日期
+        storageMode: storageMode || 'fridge',
+        state: state,
+        container: 'none',
+        source: 'ai-identified',
+        notes: `AI 識別: ${item.notes || ''} ${item.shelfLife ? `| 保存期限: ${item.shelfLife.daysMin}-${item.shelfLife.daysMax}天` : ''}`.trim(),
+        tags: ['ai-identified']
+      };
+
+      console.log('Inventory data to submit:', inventoryData);
+
+      // 呼叫 API 新增到庫存
+      const result = await addInventoryItem(inventoryData).unwrap();
+      
+      if (result.success) {
+        alert(`✅ 已成功新增「${item.name}」到庫存！\n\n保存期限: ${result.estimate?.shelfLifeDays?.min || 0}-${result.estimate?.shelfLifeDays?.max || 0} 天\n保存建議: ${result.estimate?.tips || '無'}`);
+        
+        // 可以選擇是否要重置識別結果
+        // reset();
+      } else {
+        throw new Error(result.error || '新增失敗');
+      }
+      
+    } catch (error) {
+      console.error('Add to inventory failed:', error);
+      alert('❌ 新增到庫存失敗：' + (error.message || '未知錯誤'));
+    }
   };
 
   // 重置狀態
@@ -356,17 +411,19 @@ const AiIdentificationView = () => {
                           </div>
                           <button
                             onClick={() => addToInventory(item)}
+                            disabled={isAdding}
                             style={{
                               padding: '4px 8px',
-                              backgroundColor: '#10b981',
+                              backgroundColor: isAdding ? '#9ca3af' : '#10b981',
                               color: 'white',
                               border: 'none',
                               borderRadius: '4px',
                               fontSize: '12px',
-                              cursor: 'pointer'
+                              cursor: isAdding ? 'not-allowed' : 'pointer',
+                              opacity: isAdding ? 0.6 : 1
                             }}
                           >
-                            ➕ 加入庫存
+                            {isAdding ? '⏳ 新增中...' : '➕ 加入庫存'}
                           </button>
                         </div>
 
@@ -395,7 +452,33 @@ const AiIdentificationView = () => {
                           {item.brand && (
                             <div><strong>品牌:</strong> {item.brand}</div>
                           )}
+                          {item.itemKey && (
+                            <div><strong>代碼:</strong> {item.itemKey}</div>
+                          )}
                         </div>
+
+                        {/* 保存期限資訊 */}
+                        {item.shelfLife && (
+                          <div style={{
+                            marginTop: 8,
+                            padding: 8,
+                            backgroundColor: '#f0f9ff',
+                            border: '1px solid #bae6fd',
+                            borderRadius: 4,
+                            fontSize: '12px'
+                          }}>
+                            <div style={{ fontWeight: 'bold', color: '#0369a1', marginBottom: 4 }}>
+                              📅 保存期限建議
+                            </div>
+                            <div style={{ color: '#374151' }}>
+                              <div>• 期限: {item.shelfLife.daysMin}-{item.shelfLife.daysMax} 天</div>
+                              <div>• 信心度: {Math.round((item.shelfLife.confidence || 0) * 100)}%</div>
+                              {item.shelfLife.tips && (
+                                <div>• 建議: {item.shelfLife.tips}</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {item.notes && (
                           <div style={{ 

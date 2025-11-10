@@ -48,7 +48,7 @@ const ItemSchema = new mongoose.Schema({
   // 來源追蹤
   source: {
     type: String,
-    enum: ['manual', 'barcode', 'photo', 'receipt', 'import'],
+    enum: ['manual', 'barcode', 'photo', 'receipt', 'ai-identified'],
     default: 'manual'
   },
   

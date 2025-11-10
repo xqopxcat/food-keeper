@@ -16,7 +16,7 @@ const ProductSchema = new mongoose.Schema({
   // 資料來源追蹤
   source: {                  // 資料來源
     type: String,
-    enum: ['manual', 'openfoodfacts', 'upcdatabase', 'import'],
+    enum: ['manual', 'openfoodfacts', 'upcdatabase', 'ai-identified'],
     default: 'manual'
   },
   external_id: String,       // 外部 API 的 ID

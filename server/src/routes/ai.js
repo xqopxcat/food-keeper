@@ -9,7 +9,7 @@ const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB 限制
+    fileSize: 50 * 1024 * 1024, // 增加到 50MB 限制
   },
   fileFilter: (req, file, cb) => {
     // 只允許圖片類型
@@ -62,10 +62,10 @@ router.post('/identify', upload.single('image'), async (req, res) => {
 
     // 驗證圖片大小 (base64 解碼後)
     const imageSizeBytes = (imageBase64.length * 3) / 4;
-    if (imageSizeBytes > 10 * 1024 * 1024) {
+    if (imageSizeBytes > 50 * 1024 * 1024) {
       return res.status(400).json({
         success: false,
-        error: '圖片大小不能超過 10MB'
+        error: '圖片大小不能超過 50MB'
       });
     }
 
@@ -117,20 +117,20 @@ router.post('/ocr', upload.single('image'), async (req, res) => {
 
     // 驗證圖片大小
     const imageSizeBytes = (imageBase64.length * 3) / 4;
-    if (imageSizeBytes > 10 * 1024 * 1024) {
+    if (imageSizeBytes > 50 * 1024 * 1024) {
       return res.status(400).json({
         success: false,
-        error: '圖片大小不能超過 10MB'
+        error: '圖片大小不能超過 50MB'
       });
     }
 
-    // 呼叫 OCR 服務
-    const result = await extractTextFromImage(imageBase64);
+    // 呼叫混合 OCR 服務 (專注使用 Google Vision)
+    const result = await hybridTextExtraction(imageBase64, { strategy: 'google' });
 
-    console.log('AI OCR:', {
+    console.log('AI OCR (Google Vision):', {
       timestamp: new Date().toISOString(),
       success: result.success,
-      provider: result.aiProvider
+      provider: result.aiProvider || result.strategy
     });
 
     res.json(result);
@@ -222,7 +222,9 @@ router.post('/batch-identify', upload.array('images', 10), async (req, res) => {
       const batchPromises = batch.map(async (file, index) => {
         try {
           const imageBase64 = file.buffer.toString('base64');
-          const result = await identifyFoodItems(imageBase64, options);
+          // 使用混合 AI 識別 (專注 Google Vision)
+          const batchOptions = { strategy: 'google', ...options };
+          const result = await hybridFoodIdentification(imageBase64, batchOptions);
           return {
             index: i + index,
             filename: file.originalname,
@@ -290,18 +292,18 @@ router.post('/compare', upload.single('image'), async (req, res) => {
     }
 
     const options = {
-      strategy: 'both', // 強制使用兩個 API
+      strategy: 'google', // 當前專注使用 Google Vision (可在未來改為 'both' 進行比較)
       language: 'zh-TW',
       includeQuantity: true,
       includeExpiration: true,
       includeBrand: true
     };
 
-    // 執行混合識別 (會同時調用兩個 API)
+    // 執行 Google Vision 識別 
     const result = await hybridFoodIdentification(imageBase64, options);
     
-    // 同時執行 OCR 比較
-    const ocrResult = await hybridTextExtraction(imageBase64, { strategy: 'both' });
+    // 同時執行 Google Vision OCR
+    const ocrResult = await hybridTextExtraction(imageBase64, { strategy: 'google' });
 
     res.json({
       success: true,
@@ -350,8 +352,9 @@ router.post('/hybrid-ocr', upload.single('image'), async (req, res) => {
       });
     }
 
-    // 使用混合 OCR 策略
-    const result = await hybridTextExtraction(imageBase64, options);
+    // 使用混合 OCR 策略 (預設專注使用 Google Vision)
+    const ocrOptions = { strategy: 'google', ...options };
+    const result = await hybridTextExtraction(imageBase64, ocrOptions);
 
     console.log('Hybrid OCR:', {
       timestamp: new Date().toISOString(),

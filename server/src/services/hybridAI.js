@@ -255,7 +255,6 @@ async function autoSelectOCRStrategy(imageBase64, options) {
     strategy: 'google'
   };
 }
-}
 
 /**
  * OpenAI OCR
