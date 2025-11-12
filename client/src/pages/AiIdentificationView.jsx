@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import Camera from '../components/Camera.jsx';
+import { BrowserMultiFormatReader } from '@zxing/library';
 import { 
   useIdentifyFoodItemsMutation, 
-  useExtractTextFromImageMutation, 
+  useExtractTextFromImageMutation,
+  useLazyLookupByBarcodeQuery,
   useGetAiStatusQuery,
   useAddInventoryItemMutation 
 } from '../redux/services/foodCoreAPI';
@@ -14,20 +16,29 @@ const AiIdentificationView = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [identificationResults, setIdentificationResults] = useState(null);
   const [ocrResults, setOcrResults] = useState(null);
+  const [barcodeResults, setBarcodeResults] = useState(null);
+  const [unifiedResults, setUnifiedResults] = useState(null);
 
   // RTK Query hooks
   const [identifyFood, { isLoading: isIdentifying }] = useIdentifyFoodItemsMutation();
   const [extractText, { isLoading: isExtracting }] = useExtractTextFromImageMutation();
+  const [triggerBarcodelookup, { isLoading: isLookingUp }] = useLazyLookupByBarcodeQuery();
   const [addInventoryItem, { isLoading: isAdding }] = useAddInventoryItemMutation();
   const { data: aiStatus } = useGetAiStatusQuery();
 
-  // 處理拍照結果
+  // 處理拍照結果 - 統一識別協調器
   const handleCapture = async (imageData) => {
     setCapturedImage(imageData);
     setMode('results');
     
-    // 自動開始識別
-    await performIdentification(imageData.base64);
+    // 清空之前的結果
+    setIdentificationResults(null);
+    setOcrResults(null);
+    setBarcodeResults(null);
+    setUnifiedResults(null);
+    
+    // 自動開始統一識別
+    await performUnifiedRecognition(imageData.base64);
   };
 
   // 處理檔案上傳
@@ -56,13 +67,372 @@ const AiIdentificationView = () => {
       setCapturedImage(imageData);
       setMode('results');
       
-      // 自動開始識別
-      await performIdentification(base64);
+      // 清空之前的結果
+      setIdentificationResults(null);
+      setOcrResults(null);
+      setBarcodeResults(null);
+      setUnifiedResults(null);
+      
+      // 自動開始統一識別
+      await performUnifiedRecognition(base64);
     };
     reader.readAsDataURL(file);
   };
 
-  // 執行 AI 識別
+  // 統一識別協調器 - 同時觸發三個功能並合併結果
+  const performUnifiedRecognition = async (base64Image) => {
+    try {
+      console.log('🚀 開始統一識別處理...');
+      
+      // 並行執行三種識別：AI物件識別、OCR文字識別、條碼掃描
+      const [foodResult, ocrResult, barcodeResult] = await Promise.allSettled([
+        // 1. AI 物件識別
+        identifyFood({ 
+          imageBase64: base64Image,
+          options: {
+            language: 'zh-TW',
+            includeQuantity: true,
+            includeExpiration: true,
+            includeBrand: true
+          }
+        }).unwrap(),
+        
+        // 2. OCR 文字識別  
+        extractText({ imageBase64: base64Image }).unwrap(),
+        
+        // 3. 條碼掃描與產品查詢
+        extractAndLookupBarcode(base64Image)
+      ]);
+
+      // 處理 AI 物件識別結果
+      if (foodResult.status === 'fulfilled') {
+        setIdentificationResults(foodResult.value);
+        console.log('✅ AI 物件識別完成:', foodResult.value);
+      } else {
+        console.error('❌ AI 物件識別失敗:', foodResult.reason);
+        setIdentificationResults({ success: false, error: foodResult.reason?.message || '識別失敗' });
+      }
+
+      // 處理 OCR 文字識別結果
+      if (ocrResult.status === 'fulfilled') {
+        setOcrResults(ocrResult.value);
+        console.log('✅ OCR 文字識別完成:', ocrResult.value);
+      } else {
+        console.error('❌ OCR 文字識別失敗:', ocrResult.reason);
+        setOcrResults({ success: false, error: ocrResult.reason?.message || 'OCR失敗' });
+      }
+
+      // 處理條碼識別結果
+      if (barcodeResult.status === 'fulfilled') {
+        setBarcodeResults(barcodeResult.value);
+        console.log('✅ 條碼識別完成:', barcodeResult.value);
+      } else {
+        console.error('❌ 條碼識別失敗:', barcodeResult.reason);
+        setBarcodeResults({ success: false, error: barcodeResult.reason?.message || '條碼掃描失敗' });
+      }
+
+      // 合併和分析結果
+      const mergedResults = mergeRecognitionResults(
+        foodResult.status === 'fulfilled' ? foodResult.value : null,
+        ocrResult.status === 'fulfilled' ? ocrResult.value : null,
+        barcodeResult.status === 'fulfilled' ? barcodeResult.value : null
+      );
+      
+      setUnifiedResults(mergedResults);
+      console.log('🎯 統一識別結果:', mergedResults);
+
+    } catch (error) {
+      console.error('❌ 統一識別處理錯誤:', error);
+      alert('統一識別失敗：' + (error.message || '未知錯誤'));
+    }
+  };
+
+  // 從圖片中提取條碼並查詢產品資訊
+  const extractAndLookupBarcode = async (base64Image) => {
+    try {
+      console.log('🔍 開始條碼掃描...');
+      
+      // 使用 @zxing/library 從圖片中檢測條碼
+      const extractedBarcodes = await extractBarcodesFromImage(base64Image);
+      
+      if (extractedBarcodes.length === 0) {
+        return {
+          success: false,
+          message: '未檢測到條碼',
+          products: []
+        };
+      }
+
+      // 查詢每個檢測到的條碼
+      const productLookups = await Promise.allSettled(
+        extractedBarcodes.map(barcode => 
+          triggerBarcodelookup(barcode).unwrap()
+        )
+      );
+
+      const products = productLookups
+        .filter(result => result.status === 'fulfilled' && result.value)
+        .map(result => ({
+          ...result.value,
+          source: 'barcode'
+        }));
+
+      return {
+        success: products.length > 0,
+        barcodes: extractedBarcodes,
+        products: products,
+        message: products.length > 0 ? `找到 ${products.length} 個產品` : '未找到產品資訊'
+      };
+
+    } catch (error) {
+      console.error('條碼識別錯誤:', error);
+      return {
+        success: false,
+        error: error.message || '條碼識別失敗',
+        products: []
+      };
+    }
+  };
+
+  // 使用 @zxing/library 從 base64 圖片中檢測條碼
+  const extractBarcodesFromImage = async (base64Image) => {
+    try {
+      const codeReader = new BrowserMultiFormatReader();
+      
+      // 創建 Image 元素
+      const img = new Image();
+      const imageLoadPromise = new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = `data:image/jpeg;base64,${base64Image}`;
+      });
+      
+      await imageLoadPromise;
+      
+      // 嘗試從圖片中解碼條碼
+      try {
+        const result = await codeReader.decodeFromImageElement(img);
+        if (result) {
+          console.log('✅ 檢測到條碼:', result.getText());
+          return [result.getText()];
+        }
+      } catch (decodeError) {
+        console.log('⚠️ 圖片中未檢測到條碼');
+        return [];
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('條碼檢測錯誤:', error);
+      return [];
+    }
+  };
+
+  // 合併三種識別結果的協調器
+  const mergeRecognitionResults = (aiResult, ocrResult, barcodeResult) => {
+    const merged = {
+      hasResults: false,
+      confidence: {
+        overall: 0,
+        ai: 0,
+        ocr: 0,
+        barcode: 0
+      },
+      products: [],
+      foodItems: [],
+      extractedText: null,
+      barcodeProducts: [],
+      crossValidation: {},
+      recommendations: []
+    };
+
+    // 合併 AI 識別的食材
+    if (aiResult?.success && aiResult.items?.length > 0) {
+      merged.foodItems = aiResult.items.map(item => ({
+        ...item,
+        source: 'ai_recognition',
+        priority: calculateItemPriority(item, 'ai')
+      }));
+      merged.confidence.ai = calculateAverageConfidence(aiResult.items);
+      merged.hasResults = true;
+    }
+
+    // 合併 OCR 提取的文字資訊
+    if (ocrResult?.success && ocrResult.text) {
+      merged.extractedText = ocrResult.text;
+      merged.confidence.ocr = 0.8; // OCR 基礎置信度
+      merged.hasResults = true;
+      
+      // 嘗試從 OCR 文字中提取產品信息
+      const ocrProduct = extractProductFromOCR(ocrResult.text);
+      if (ocrProduct) {
+        merged.products.push({
+          ...ocrProduct,
+          source: 'ocr_extraction',
+          priority: calculateItemPriority(ocrProduct, 'ocr')
+        });
+      }
+    }
+
+    // 合併條碼識別的產品
+    if (barcodeResult?.success && barcodeResult.products?.length > 0) {
+      merged.barcodeProducts = barcodeResult.products;
+      merged.products.push(...barcodeResult.products.map(product => ({
+        ...product,
+        source: 'barcode_lookup',
+        priority: calculateItemPriority(product, 'barcode')
+      })));
+      merged.confidence.barcode = 0.95; // 條碼查詢的高置信度
+      merged.hasResults = true;
+    }
+
+    // 交叉驗證和置信度提升
+    merged.crossValidation = performCrossValidation(aiResult, ocrResult, barcodeResult);
+    
+    // 計算整體置信度
+    const validConfidences = [
+      merged.confidence.ai,
+      merged.confidence.ocr,
+      merged.confidence.barcode
+    ].filter(conf => conf > 0);
+    
+    merged.confidence.overall = validConfidences.length > 0 
+      ? validConfidences.reduce((sum, conf) => sum + conf, 0) / validConfidences.length 
+      : 0;
+
+    // 生成智慧建議
+    merged.recommendations = generateRecommendations(merged);
+
+    return merged;
+  };
+
+  // 計算項目優先級
+  const calculateItemPriority = (item, source) => {
+    let priority = 0;
+    
+    // 來源權重
+    const sourceWeights = { barcode: 0.4, ai: 0.3, ocr: 0.3 };
+    priority += sourceWeights[source] || 0;
+    
+    // 置信度權重
+    priority += (item.confidence || 0) * 0.4;
+    
+    // 資訊完整度權重
+    const completeness = calculateInformationCompleteness(item);
+    priority += completeness * 0.3;
+    
+    return Math.min(priority, 1.0);
+  };
+
+  // 計算資訊完整度
+  const calculateInformationCompleteness = (item) => {
+    const fields = ['name', 'brand', 'category', 'quantity'];
+    const filledFields = fields.filter(field => item[field]).length;
+    return filledFields / fields.length;
+  };
+
+  // 計算平均置信度
+  const calculateAverageConfidence = (items) => {
+    if (!items || items.length === 0) return 0;
+    const totalConfidence = items.reduce((sum, item) => sum + (item.confidence || 0), 0);
+    return totalConfidence / items.length;
+  };
+
+  // 從 OCR 文字提取產品資訊
+  const extractProductFromOCR = (textData) => {
+    if (!textData) return null;
+    
+    const product = {
+      name: textData.productName || null,
+      brand: textData.brand || null,
+      expirationDate: textData.expirationDate || null,
+      barcode: textData.barcode || null,
+      confidence: 0.7
+    };
+    
+    // 只有當至少有產品名稱時才返回
+    return product.name ? product : null;
+  };
+
+  // 交叉驗證邏輯
+  const performCrossValidation = (aiResult, ocrResult, barcodeResult) => {
+    const validation = {
+      nameConsistency: false,
+      brandConsistency: false,
+      categoryConsistency: false,
+      confidence: 0
+    };
+
+    // 檢查產品名稱一致性
+    const names = [];
+    if (aiResult?.items?.[0]?.name) names.push(aiResult.items[0].name.toLowerCase());
+    if (ocrResult?.text?.productName) names.push(ocrResult.text.productName.toLowerCase());
+    if (barcodeResult?.products?.[0]?.name) names.push(barcodeResult.products[0].name.toLowerCase());
+    
+    if (names.length > 1) {
+      // 簡單的名稱相似度檢查
+      validation.nameConsistency = names.some(name => 
+        names.some(otherName => 
+          name !== otherName && (name.includes(otherName) || otherName.includes(name))
+        )
+      );
+    }
+
+    // 檢查品牌一致性
+    const brands = [];
+    if (aiResult?.items?.[0]?.brand) brands.push(aiResult.items[0].brand);
+    if (ocrResult?.text?.brand) brands.push(ocrResult.text.brand);
+    if (barcodeResult?.products?.[0]?.brand) brands.push(barcodeResult.products[0].brand);
+    
+    validation.brandConsistency = brands.length > 1 && new Set(brands).size === 1;
+
+    // 計算驗證置信度
+    let validationScore = 0;
+    if (validation.nameConsistency) validationScore += 0.4;
+    if (validation.brandConsistency) validationScore += 0.3;
+    validation.confidence = validationScore;
+
+    return validation;
+  };
+
+  // 生成智慧建議
+  const generateRecommendations = (mergedResults) => {
+    const recommendations = [];
+
+    if (mergedResults.confidence.overall > 0.8) {
+      recommendations.push({
+        type: 'high_confidence',
+        message: '識別結果置信度高，建議直接加入庫存',
+        priority: 'high'
+      });
+    } else if (mergedResults.confidence.overall < 0.5) {
+      recommendations.push({
+        type: 'low_confidence',
+        message: '識別結果置信度較低，建議手動確認',
+        priority: 'medium'
+      });
+    }
+
+    if (mergedResults.crossValidation.nameConsistency) {
+      recommendations.push({
+        type: 'cross_validation',
+        message: '多種識別方式確認了產品名稱，結果可信度高',
+        priority: 'info'
+      });
+    }
+
+    if (mergedResults.barcodeProducts.length > 0) {
+      recommendations.push({
+        type: 'barcode_found',
+        message: '找到條碼資訊，產品資料完整度高',
+        priority: 'high'
+      });
+    }
+
+    return recommendations;
+  };
+
+  // 執行 AI 識別（保留原有功能作為備用）
   const performIdentification = async (base64Image) => {
     try {
       // 並行執行物品識別和文字識別
@@ -102,7 +472,9 @@ const AiIdentificationView = () => {
     if (capturedImage?.base64) {
       setIdentificationResults(null);
       setOcrResults(null);
-      performIdentification(capturedImage.base64);
+      setBarcodeResults(null);
+      setUnifiedResults(null);
+      performUnifiedRecognition(capturedImage.base64);
     }
   };
 
@@ -171,6 +543,8 @@ const AiIdentificationView = () => {
     setCapturedImage(null);
     setIdentificationResults(null);
     setOcrResults(null);
+    setBarcodeResults(null);
+    setUnifiedResults(null);
     setMode('camera');
   };
 
@@ -199,9 +573,9 @@ const AiIdentificationView = () => {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* 頁面標題 */}
       <div style={{ padding: 16, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: '0 0 8px 0' }}>🤖 AI 物品識別</h2>
+        <h2 style={{ margin: '0 0 8px 0' }}>🤖 智慧統一識別</h2>
         <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
-          拍照或上傳圖片，AI 自動識別食材種類和包裝資訊
+          一次拍照，同時進行 AI 物件識別、OCR 文字識別、條碼掃描，並智慧合併結果
         </p>
       </div>
 
@@ -358,7 +732,7 @@ const AiIdentificationView = () => {
             )}
 
             {/* 載入狀態 */}
-            {(isIdentifying || isExtracting) && (
+            {(isIdentifying || isExtracting || isLookingUp) && (
               <div style={{
                 textAlign: 'center',
                 padding: 20,
@@ -367,7 +741,189 @@ const AiIdentificationView = () => {
                 margin: '16px 0'
               }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>🤖</div>
-                <p>AI 正在分析圖片中...</p>
+                <p>🚀 統一識別處理中...</p>
+                <div style={{ fontSize: '14px', color: '#6b7280', marginTop: 8 }}>
+                  {isIdentifying && '• AI 物件識別中...'}<br/>
+                  {isExtracting && '• OCR 文字識別中...'}<br/>
+                  {isLookingUp && '• 條碼產品查詢中...'}
+                </div>
+              </div>
+            )}
+
+            {/* 統一識別結果摘要 */}
+            {unifiedResults && unifiedResults.hasResults && (
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ 
+                  margin: '0 0 12px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  🎯 統一識別結果摘要
+                </h3>
+                
+                <div style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  padding: 12,
+                  backgroundColor: 'white'
+                }}>
+                  {/* 整體置信度 */}
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>整體置信度: </strong>
+                    <span style={{ 
+                      color: unifiedResults.confidence.overall > 0.7 ? '#059669' : 
+                             unifiedResults.confidence.overall > 0.4 ? '#d97706' : '#dc2626'
+                    }}>
+                      {Math.round(unifiedResults.confidence.overall * 100)}%
+                    </span>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: 4 }}>
+                      AI: {Math.round(unifiedResults.confidence.ai * 100)}% | 
+                      OCR: {Math.round(unifiedResults.confidence.ocr * 100)}% | 
+                      條碼: {Math.round(unifiedResults.confidence.barcode * 100)}%
+                    </div>
+                  </div>
+
+                  {/* 識別到的產品數量 */}
+                  <div style={{ marginBottom: 12, fontSize: '14px' }}>
+                    <div>🍎 AI識別食材: {unifiedResults.foodItems.length} 項</div>
+                    <div>📦 條碼產品: {unifiedResults.barcodeProducts.length} 項</div>
+                    <div>📝 文字識別: {unifiedResults.extractedText ? '成功' : '無'}</div>
+                  </div>
+
+                  {/* 智慧建議 */}
+                  {unifiedResults.recommendations.length > 0 && (
+                    <div>
+                      <strong>智慧建議:</strong>
+                      {unifiedResults.recommendations.map((rec, index) => (
+                        <div key={index} style={{
+                          fontSize: '12px',
+                          color: rec.priority === 'high' ? '#059669' : 
+                                 rec.priority === 'medium' ? '#d97706' : '#6b7280',
+                          marginTop: 4
+                        }}>
+                          • {rec.message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 交叉驗證結果 */}
+                  {unifiedResults.crossValidation.confidence > 0 && (
+                    <div style={{
+                      marginTop: 8,
+                      padding: 6,
+                      backgroundColor: '#f0f9ff',
+                      borderRadius: 4,
+                      fontSize: '12px'
+                    }}>
+                      ✅ 交叉驗證: {unifiedResults.crossValidation.nameConsistency ? '名稱一致 ' : ''}
+                      {unifiedResults.crossValidation.brandConsistency ? '品牌一致' : ''}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 條碼識別結果 */}
+            {barcodeResults && (
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ 
+                  margin: '0 0 12px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  🏷️ 條碼識別結果
+                </h3>
+                
+                {barcodeResults.success ? (
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {barcodeResults.products.map((product, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          border: '1px solid #e5e7eb',
+                          borderRadius: 8,
+                          padding: 12,
+                          backgroundColor: 'white'
+                        }}
+                      >
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          marginBottom: 8
+                        }}>
+                          <div>
+                            <h4 style={{ margin: '0 0 4px 0' }}>
+                              {product.name || '未知產品'}
+                            </h4>
+                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                              條碼: {product.barcode}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => addToInventory(product)}
+                            disabled={isAdding}
+                            style={{
+                              padding: '4px 8px',
+                              backgroundColor: isAdding ? '#9ca3af' : '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              cursor: isAdding ? 'not-allowed' : 'pointer',
+                              opacity: isAdding ? 0.6 : 1
+                            }}
+                          >
+                            {isAdding ? '⏳ 新增中...' : '➕ 加入庫存'}
+                          </button>
+                        </div>
+
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                          gap: 8,
+                          fontSize: '14px'
+                        }}>
+                          {product.brand && (
+                            <div><strong>品牌:</strong> {product.brand}</div>
+                          )}
+                          {product.category && (
+                            <div><strong>分類:</strong> {product.category}</div>
+                          )}
+                          {product.quantity && (
+                            <div><strong>規格:</strong> {product.quantity}</div>
+                          )}
+                        </div>
+
+                        {product.description && (
+                          <div style={{ 
+                            marginTop: 8, 
+                            padding: 8,
+                            backgroundColor: '#f9fafb',
+                            borderRadius: 4,
+                            fontSize: '12px',
+                            color: '#374151'
+                          }}>
+                            📝 {product.description}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: 16,
+                    backgroundColor: '#fef3c7',
+                    border: '1px solid #f59e0b',
+                    borderRadius: 8,
+                    color: '#92400e'
+                  }}>
+                    ℹ️ {barcodeResults.error || barcodeResults.message || '未檢測到條碼'}
+                  </div>
+                )}
               </div>
             )}
 

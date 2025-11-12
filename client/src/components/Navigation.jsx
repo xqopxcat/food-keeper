@@ -44,7 +44,7 @@ const Navigation = () => {
             fontSize: '14px'
           }}
         >
-          🤖 AI識別
+          🎯 統一識別
         </Link>
         <Link
           to="/inventory"
