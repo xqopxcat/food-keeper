@@ -99,9 +99,7 @@ src/
 │       └── foodCoreAPI.js          # RTK Query API 定義
 ├── pages/
 │   ├── ScannerView.jsx             # 原始版本
-│   ├── ScannerViewRTK.jsx          # RTK Query 版本
 │   ├── InventoryView.jsx           # 原始版本
-│   └── InventoryViewRTK.jsx        # RTK Query 版本
 └── api.js                          # 舊的 API (可以保留用於參考)
 ```
 
