@@ -20,6 +20,7 @@ const AiIdentificationView = () => {
   const [barcodeResults, setBarcodeResults] = useState(null);
   const [unifiedResults, setUnifiedResults] = useState(null);
   const [selectedItemForStorage, setSelectedItemForStorage] = useState(null);
+  const [showStorageModal, setShowStorageModal] = useState(false);
 
   // 保存情境狀態 (類似 ScannerView)
   const [facts, setFacts] = useState({ 
@@ -222,30 +223,54 @@ const AiIdentificationView = () => {
   // 使用 @zxing/library 從 base64 圖片中檢測條碼
   const extractBarcodesFromImage = async (base64Image) => {
     try {
+      console.log('🔍 開始條碼檢測...');
       const codeReader = new BrowserMultiFormatReader();
       
       // 創建 Image 元素
       const img = new Image();
       const imageLoadPromise = new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = reject;
+        img.onerror = (e) => {
+          console.error('圖片加載失敗:', e);
+          reject(new Error('圖片加載失敗'));
+        };
+        img.crossOrigin = 'anonymous';
         img.src = `data:image/jpeg;base64,${base64Image}`;
       });
       
       await imageLoadPromise;
+      console.log('✅ 圖片加載成功，開始條碼解碼...');
       
-      // 嘗試從圖片中解碼條碼
+      // 嘗試從圖片中解碼條碼，增加多種嘗試方式
       try {
+        // 方法1：直接從圖片元素解碼
         const result = await codeReader.decodeFromImageElement(img);
-        if (result) {
-          console.log('✅ 檢測到條碼:', result.getText());
+        if (result && result.getText()) {
+          console.log('✅ 檢測到條碼 (方法1):', result.getText());
           return [result.getText()];
         }
       } catch (decodeError) {
-        console.log('⚠️ 圖片中未檢測到條碼');
-        return [];
+        console.log('⚠️ 方法1解碼失敗，嘗試其他方法...');
+      }
+
+      try {
+        // 方法2：創建Canvas並解碼
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width || img.naturalWidth;
+        canvas.height = img.height || img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+        
+        const result = await codeReader.decodeFromCanvas(canvas);
+        if (result && result.getText()) {
+          console.log('✅ 檢測到條碼 (方法2):', result.getText());
+          return [result.getText()];
+        }
+      } catch (canvasError) {
+        console.log('⚠️ 方法2解碼失敗:', canvasError.message);
       }
       
+      console.log('❌ 圖片中未檢測到條碼');
       return [];
     } catch (error) {
       console.error('條碼檢測錯誤:', error);
@@ -275,7 +300,7 @@ const AiIdentificationView = () => {
     if (aiResult?.success && aiResult.items?.length > 0) {
       merged.foodItems = aiResult.items.map(item => ({
         ...item,
-        source: 'ai_recognition',
+        source: 'ai-identified',
         priority: calculateItemPriority(item, 'ai')
       }));
       merged.confidence.ai = calculateAverageConfidence(aiResult.items);
@@ -478,7 +503,7 @@ const AiIdentificationView = () => {
         'barcode': { tag: 'barcode-identified', prefix: '條碼查詢' }
       };
       
-      const sourceData = sourceInfo[item.source] || sourceInfo['ai_recognition'];
+      const sourceData = sourceInfo[item.source] || sourceInfo['ai-identified'];
       
       // 構建新增庫存的資料
       const inventoryData = {
@@ -588,6 +613,9 @@ const AiIdentificationView = () => {
           }
         }));
       }
+
+      // 顯示彈出式視窗
+      setShowStorageModal(true);
     }
   };
 
@@ -638,7 +666,7 @@ const AiIdentificationView = () => {
         quantity: inventoryData.quantity,
         purchaseDate: inventoryData.purchaseDate,
         location: inventoryData.location,
-        source: 'ai_recognition',
+        source: 'ai-identified',
         notes: inventoryData.notes
       };
 
@@ -647,9 +675,8 @@ const AiIdentificationView = () => {
       if (response.saved) {
         alert(`✅ 已成功加入庫存！\n預估保存期限：${response.daysMin || 'N/A'}~${response.daysMax || 'N/A'} 天`);
         
-        // 重置選中項目
-        setSelectedItemForStorage(null);
-        resetStorageForm();
+        // 關閉彈窗並重置
+        closeStorageModal();
       }
     } catch (e) {
       alert(`❌ 加入庫存失敗：${e.message || '未知錯誤'}`);
@@ -668,6 +695,13 @@ const AiIdentificationView = () => {
     setFoodSearch('');
   };
 
+  // 關閉庫存設定彈窗
+  const closeStorageModal = () => {
+    setShowStorageModal(false);
+    setSelectedItemForStorage(null);
+    resetStorageForm();
+  };
+
   // 重置狀態
   const reset = () => {
     setCapturedImage(null);
@@ -675,8 +709,7 @@ const AiIdentificationView = () => {
     setOcrResults(null);
     setBarcodeResults(null);
     setUnifiedResults(null);
-    setSelectedItemForStorage(null);
-    resetStorageForm();
+    closeStorageModal();
     setMode('camera');
   };
 
@@ -704,6 +737,462 @@ const AiIdentificationView = () => {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* 彈出式庫存設定模態窗口 */}
+      {showStorageModal && selectedItemForStorage && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: 16,
+            padding: 0,
+            maxWidth: 600,
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            border: '1px solid #e5e7eb'
+          }}>
+            {/* 模態窗口標題 */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              backgroundColor: '#f59e0b',
+              borderRadius: '16px 16px 0 0',
+              color: 'white'
+            }}>
+              <h3 style={{ 
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: '18px'
+              }}>
+                📦 庫存設定 - {selectedItemForStorage.name}
+              </h3>
+              <button
+                onClick={closeStorageModal}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}
+                onMouseOver={e => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+                onMouseOut={e => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+              >
+                ✕ 關閉
+              </button>
+            </div>
+
+            {/* 模態窗口內容 */}
+            <div style={{ padding: 20 }}>
+              {/* 選中項目摘要 */}
+              <div style={{
+                padding: 16,
+                backgroundColor: '#f0f9ff',
+                border: '1px solid #bae6fd',
+                borderRadius: 12,
+                marginBottom: 20
+              }}>
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  color: '#0369a1',
+                  fontSize: '16px',
+                  marginBottom: 8
+                }}>
+                  🎯 {selectedItemForStorage.name} 
+                  {selectedItemForStorage.englishName && `(${selectedItemForStorage.englishName})`}
+                </div>
+                <div style={{ fontSize: '13px', color: '#374151' }}>
+                  <div>信心度：{Math.round((selectedItemForStorage.confidence || 0) * 100)}%</div>
+                  <div>分類：{selectedItemForStorage.category || '未分類'}</div>
+                  <div>代碼：{selectedItemForStorage.itemKey || '自動推測'}</div>
+                </div>
+              </div>
+
+              {/* 保存情境設定 */}
+              <div style={{ marginBottom: 24 }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#374151', fontSize: '16px' }}>
+                  🌡️ 保存情境
+                </h4>
+                
+                <div style={{ 
+                  display:'grid', 
+                  gridTemplateColumns:'repeat(2, 1fr)', 
+                  gap: 16, 
+                  marginBottom: 16 
+                }}>
+                  {/* 簡化的食材選擇器 */}
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      食材種類
+                    </span>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        placeholder={facts.itemKey ? selectedFoodLabel : "搜尋食材種類..."}
+                        value={foodSearch}
+                        onChange={e => {
+                          setFoodSearch(e.target.value);
+                          setShowFoodDropdown(true);
+                        }}
+                        onFocus={() => setShowFoodDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowFoodDropdown(false), 200)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '14px'
+                        }}
+                      />
+                      
+                      {showFoodDropdown && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          backgroundColor: 'white',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                          zIndex: 1000,
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
+                        }}>
+                          {filteredFoodOptions.slice(0, 30).map(option => (
+                            <div
+                              key={option.value}
+                              onClick={() => {
+                                setFacts(f => ({ ...f, itemKey: option.value }));
+                                setFoodSearch('');
+                                setShowFoodDropdown(false);
+                              }}
+                              style={{
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                backgroundColor: facts.itemKey === option.value ? '#e3f2fd' : 'white',
+                                fontSize: '14px',
+                                borderBottom: '1px solid #f3f4f6'
+                              }}
+                              onMouseEnter={e => {
+                                if (facts.itemKey !== option.value) {
+                                  e.target.style.backgroundColor = '#f8fafc';
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                if (facts.itemKey !== option.value) {
+                                  e.target.style.backgroundColor = 'white';
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {facts.itemKey && (
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                        已選擇: {selectedFoodLabel}
+                      </div>
+                    )}
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      保存方式
+                    </span>
+                    <select 
+                      value={facts.storageMode} 
+                      onChange={e => setFacts(f => ({ ...f, storageMode: e.target.value }))}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <option value="room">室溫</option>
+                      <option value="fridge">冷藏</option>
+                      <option value="freezer">冷凍</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      狀態
+                    </span>
+                    <select 
+                      value={facts.state} 
+                      onChange={e => setFacts(f => ({ ...f, state: e.target.value }))}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <option value="whole">完整</option>
+                      <option value="cut">切開</option>
+                      <option value="opened">開封</option>
+                      <option value="cooked">熟食</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      容器
+                    </span>
+                    <select 
+                      value={facts.container} 
+                      onChange={e => setFacts(f => ({ ...f, container: e.target.value }))}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <option value="none">無</option>
+                      <option value="ziplock">夾鏈袋</option>
+                      <option value="box">保鮮盒</option>
+                      <option value="paper_bag">紙袋</option>
+                      <option value="vacuum">真空包裝</option>
+                      <option value="glass_jar">玻璃罐</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              {/* 庫存資訊設定 */}
+              <div style={{ marginBottom: 24 }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#374151', fontSize: '16px' }}>
+                  📋 庫存資訊
+                </h4>
+                
+                <div style={{ 
+                  display:'grid', 
+                  gridTemplateColumns:'repeat(2, 1fr)', 
+                  gap: 16 
+                }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      數量
+                    </span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={inventoryData.quantity.amount}
+                        onChange={e => setInventoryData(data => ({
+                          ...data,
+                          quantity: { ...data.quantity, amount: parseFloat(e.target.value) || 0 }
+                        }))}
+                        style={{ 
+                          flex: 1, 
+                          padding: '10px 12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px',
+                          fontSize: '14px'
+                        }}
+                      />
+                      <select 
+                        value={inventoryData.quantity.unit}
+                        onChange={e => setInventoryData(data => ({
+                          ...data,
+                          quantity: { ...data.quantity, unit: e.target.value }
+                        }))}
+                        style={{ 
+                          padding: '10px 12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          backgroundColor: 'white'
+                        }}
+                      >
+                        {unitOptions.map(unit => (
+                          <option key={unit.value} value={unit.value}>{unit.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      購買日期
+                    </span>
+                    <input
+                      type="date"
+                      value={inventoryData.purchaseDate}
+                      onChange={e => setInventoryData(data => ({ ...data, purchaseDate: e.target.value }))}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      存放位置
+                    </span>
+                    <select 
+                      value={inventoryData.location}
+                      onChange={e => setInventoryData(data => ({ ...data, location: e.target.value }))}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      {locationOptions.map(location => (
+                        <option key={location.value} value={location.value}>{location.label}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      備註
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="例：有機、特價、AI識別..."
+                      value={inventoryData.notes}
+                      onChange={e => setInventoryData(data => ({ ...data, notes: e.target.value }))}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* 操作按鈕 */}
+              <div style={{ 
+                display: 'flex', 
+                gap: 12, 
+                flexWrap: 'wrap',
+                paddingTop: 16,
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={handleEstimateShelfLife}
+                  disabled={!facts.itemKey || isEstimating}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    backgroundColor: !facts.itemKey || isEstimating ? '#9ca3af' : '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: (!facts.itemKey || isEstimating) ? 'not-allowed' : 'pointer',
+                    opacity: (!facts.itemKey || isEstimating) ? 0.6 : 1,
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => {
+                    if (facts.itemKey && !isEstimating) {
+                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                    }
+                  }}
+                  onMouseOut={e => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  {isEstimating ? '⏳ 估算中...' : '📊 估算保存期限'}
+                </button>
+                
+                <button
+                  onClick={handleAdvancedAddToInventory}
+                  disabled={!facts.itemKey || isEstimating}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    backgroundColor: !facts.itemKey || isEstimating ? '#9ca3af' : '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: (!facts.itemKey || isEstimating) ? 'not-allowed' : 'pointer',
+                    opacity: (!facts.itemKey || isEstimating) ? 0.6 : 1,
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => {
+                    if (facts.itemKey && !isEstimating) {
+                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                    }
+                  }}
+                  onMouseOut={e => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  {isEstimating ? '⏳ 新增中...' : '📦 加入庫存'}
+                </button>
+              </div>
+
+              {/* 提示信息 */}
+              {!facts.itemKey && (
+                <div style={{ 
+                  marginTop: 16, 
+                  padding: 12,
+                  backgroundColor: '#fef3c7',
+                  border: '1px solid #f59e0b',
+                  borderRadius: 8,
+                  color: '#92400e',
+                  fontSize: '14px',
+                  textAlign: 'center'
+                }}>
+                  💡 請先選擇或確認「食材種類」再進行保存期限估算
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 頁面標題 */}
       <div style={{ padding: 16, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e5e7eb' }}>
         <h2 style={{ margin: '0 0 8px 0' }}>🤖 智慧統一識別</h2>
@@ -919,7 +1408,7 @@ const AiIdentificationView = () => {
 
                   {/* 識別到的產品數量 */}
                   <div style={{ marginBottom: 12, fontSize: '14px' }}>
-                    <div>AI識別食材: {unifiedResults.foodItems.filter(item => item.source === 'ai_recognition').length} 項</div>
+                    <div>AI識別食材: {unifiedResults.foodItems.filter(item => item.source === 'ai-identified').length} 項</div>
                     <div>文字識別產品: {unifiedResults.foodItems.filter(item => item.source === 'ocr_extraction').length} 項</div>
                     <div>條碼產品: {unifiedResults.barcodeProducts.length} 項</div>
                     <div>原始文字: {unifiedResults.extractedText ? '已擷取' : '無'}</div>
@@ -1109,10 +1598,22 @@ const AiIdentificationView = () => {
                                 border: 'none',
                                 borderRadius: '4px',
                                 fontSize: '12px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                boxShadow: selectedItemForStorage === item ? '0 2px 4px rgba(99, 102, 241, 0.3)' : 'none',
+                                fontWeight: selectedItemForStorage === item ? '600' : '400'
+                              }}
+                              onMouseOver={e => {
+                                if (selectedItemForStorage !== item) {
+                                  e.target.style.backgroundColor = '#1d4ed8';
+                                }
+                              }}
+                              onMouseOut={e => {
+                                if (selectedItemForStorage !== item) {
+                                  e.target.style.backgroundColor = '#3b82f6';
+                                }
                               }}
                             >
-                              {selectedItemForStorage === item ? '✅ 已選擇' : '📦 設定庫存'}
+                              {selectedItemForStorage === item ? '✅ 設定中' : '📦 詳細設定'}
                             </button>
                             <button
                               onClick={() => addToInventory(item)}
@@ -1128,7 +1629,7 @@ const AiIdentificationView = () => {
                                 opacity: isAdding ? 0.6 : 1
                               }}
                             >
-                              {isAdding ? '⏳ 新增中...' : '快速加入'}
+                              {isAdding ? '⏳ 新增中...' : '⚡ 快速加入'}
                             </button>
                           </div>
                         </div>
@@ -1289,353 +1790,6 @@ const AiIdentificationView = () => {
                     ❌ {ocrResults.error || '無法識別圖片中的文字'}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* 庫存設定表單 - 當有選中項目時顯示 */}
-            {selectedItemForStorage && (
-              <div style={{ marginBottom: 20 }}>
-                <h3 style={{ 
-                  margin: '0 0 12px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}>
-                  📦 庫存設定 - {selectedItemForStorage.name}
-                </h3>
-                
-                <div style={{
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 8,
-                  padding: 16,
-                  backgroundColor: 'white'
-                }}>
-                  {/* 選中項目摘要 */}
-                  <div style={{
-                    padding: 12,
-                    backgroundColor: '#f0f9ff',
-                    border: '1px solid #bae6fd',
-                    borderRadius: 6,
-                    marginBottom: 16
-                  }}>
-                    <div style={{ fontWeight: 'bold', color: '#0369a1' }}>
-                      🎯 選中項目：{selectedItemForStorage.name} 
-                      {selectedItemForStorage.englishName && `(${selectedItemForStorage.englishName})`}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#374151', marginTop: 4 }}>
-                      信心度：{Math.round((selectedItemForStorage.confidence || 0) * 100)}% | 
-                      分類：{selectedItemForStorage.category || '未分類'} | 
-                      代碼：{selectedItemForStorage.itemKey || '自動推測'}
-                    </div>
-                  </div>
-
-                  {/* 保存情境設定 */}
-                  <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>🌡️ 保存情境</h4>
-                  
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(160px,1fr))', gap:8, marginBottom: 16 }}>
-                    {/* 食材選擇器 */}
-                    <label>
-                      食材種類 (itemKey)
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type="text"
-                          placeholder={facts.itemKey ? selectedFoodLabel : "搜尋食材種類..."}
-                          value={foodSearch}
-                          onChange={e => {
-                            setFoodSearch(e.target.value);
-                            setShowFoodDropdown(true);
-                          }}
-                          onFocus={() => setShowFoodDropdown(true)}
-                          onBlur={() => {
-                            setTimeout(() => setShowFoodDropdown(false), 200);
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            fontSize: '14px'
-                          }}
-                        />
-                        
-                        {showFoodDropdown && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            right: 0,
-                            backgroundColor: 'white',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            maxHeight: '300px',
-                            overflowY: 'auto',
-                            zIndex: 1000,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                          }}>
-                            {/* 清除選項 */}
-                            {facts.itemKey && (
-                              <div
-                                onClick={() => {
-                                  setFacts(f => ({ ...f, itemKey: '' }));
-                                  setFoodSearch('');
-                                  setShowFoodDropdown(false);
-                                }}
-                                style={{
-                                  padding: '8px 12px',
-                                  cursor: 'pointer',
-                                  borderBottom: '1px solid #eee',
-                                  color: '#666',
-                                  fontStyle: 'italic'
-                                }}
-                                onMouseEnter={e => e.target.style.backgroundColor = '#f5f5f5'}
-                                onMouseLeave={e => e.target.style.backgroundColor = 'white'}
-                              >
-                                清除選擇
-                              </div>
-                            )}
-                            
-                            {/* 過濾後的選項 */}
-                            {filteredFoodOptions.length === 0 ? (
-                              <div style={{ padding: '8px 12px', color: '#999' }}>
-                                找不到符合的食材
-                              </div>
-                            ) : (
-                              (() => {
-                                const groupedOptions = filteredFoodOptions.reduce((groups, option) => {
-                                  if (!groups[option.category]) groups[option.category] = [];
-                                  groups[option.category].push(option);
-                                  return groups;
-                                }, {});
-                                
-                                return Object.entries(groupedOptions).map(([category, options]) => (
-                                  <div key={category}>
-                                    <div style={{
-                                      padding: '4px 12px',
-                                      backgroundColor: '#f8f9fa',
-                                      fontWeight: 'bold',
-                                      fontSize: '12px',
-                                      color: '#666'
-                                    }}>
-                                      {category}
-                                    </div>
-                                    {options.map(option => (
-                                      <div
-                                        key={option.value}
-                                        onClick={() => {
-                                          setFacts(f => ({ ...f, itemKey: option.value }));
-                                          setFoodSearch('');
-                                          setShowFoodDropdown(false);
-                                        }}
-                                        style={{
-                                          padding: '8px 12px',
-                                          cursor: 'pointer',
-                                          backgroundColor: facts.itemKey === option.value ? '#e3f2fd' : 'white',
-                                          fontSize: '14px'
-                                        }}
-                                        onMouseEnter={e => {
-                                          if (facts.itemKey !== option.value) {
-                                            e.target.style.backgroundColor = '#f5f5f5';
-                                          }
-                                        }}
-                                        onMouseLeave={e => {
-                                          if (facts.itemKey !== option.value) {
-                                            e.target.style.backgroundColor = 'white';
-                                          }
-                                        }}
-                                      >
-                                        {option.label}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ));
-                              })()
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {facts.itemKey && (
-                        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                          已選擇: {selectedFoodLabel}
-                        </div>
-                      )}
-                    </label>
-
-                    <label>
-                      保存方式
-                      <select 
-                        value={facts.storageMode} 
-                        onChange={e => setFacts(f => ({ ...f, storageMode: e.target.value }))}
-                        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      >
-                        <option value="room">室溫</option>
-                        <option value="fridge">冷藏</option>
-                        <option value="freezer">冷凍</option>
-                      </select>
-                    </label>
-
-                    <label>
-                      狀態
-                      <select 
-                        value={facts.state} 
-                        onChange={e => setFacts(f => ({ ...f, state: e.target.value }))}
-                        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      >
-                        <option value="whole">完整</option>
-                        <option value="cut">切開</option>
-                        <option value="opened">開封</option>
-                        <option value="cooked">熟食</option>
-                      </select>
-                    </label>
-
-                    <label>
-                      容器
-                      <select 
-                        value={facts.container} 
-                        onChange={e => setFacts(f => ({ ...f, container: e.target.value }))}
-                        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      >
-                        <option value="none">無</option>
-                        <option value="ziplock">夾鏈袋</option>
-                        <option value="box">保鮮盒</option>
-                        <option value="paper_bag">紙袋</option>
-                        <option value="vacuum">真空包裝</option>
-                        <option value="glass_jar">玻璃罐</option>
-                      </select>
-                    </label>
-                  </div>
-
-                  {/* 庫存資訊設定 */}
-                  <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>📋 庫存資訊</h4>
-                  
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(160px,1fr))', gap:8, marginBottom: 16 }}>
-                    <label>
-                      數量
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={inventoryData.quantity.amount}
-                          onChange={e => setInventoryData(data => ({
-                            ...data,
-                            quantity: { ...data.quantity, amount: parseFloat(e.target.value) || 0 }
-                          }))}
-                          style={{ flex: 1, padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                        />
-                        <select 
-                          value={inventoryData.quantity.unit}
-                          onChange={e => setInventoryData(data => ({
-                            ...data,
-                            quantity: { ...data.quantity, unit: e.target.value }
-                          }))}
-                          style={{ padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                        >
-                          {unitOptions.map(unit => (
-                            <option key={unit.value} value={unit.value}>{unit.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </label>
-
-                    <label>
-                      購買日期
-                      <input
-                        type="date"
-                        value={inventoryData.purchaseDate}
-                        onChange={e => setInventoryData(data => ({ ...data, purchaseDate: e.target.value }))}
-                        style={{ width: '100%', padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </label>
-
-                    <label>
-                      存放位置
-                      <select 
-                        value={inventoryData.location}
-                        onChange={e => setInventoryData(data => ({ ...data, location: e.target.value }))}
-                        style={{ width: '100%', padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      >
-                        {locationOptions.map(location => (
-                          <option key={location.value} value={location.value}>{location.label}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label>
-                      備註
-                      <input
-                        type="text"
-                        placeholder="例：有機、特價、AI識別..."
-                        value={inventoryData.notes}
-                        onChange={e => setInventoryData(data => ({ ...data, notes: e.target.value }))}
-                        style={{ width: '100%', padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </label>
-                  </div>
-
-                  {/* 操作按鈕 */}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      onClick={handleEstimateShelfLife}
-                      disabled={!facts.itemKey || isEstimating}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: !facts.itemKey || isEstimating ? '#9ca3af' : '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: (!facts.itemKey || isEstimating) ? 'not-allowed' : 'pointer',
-                        opacity: (!facts.itemKey || isEstimating) ? 0.6 : 1
-                      }}
-                    >
-                      {isEstimating ? '⏳ 估算中...' : '📊 估算保存期限'}
-                    </button>
-                    
-                    <button
-                      onClick={handleAdvancedAddToInventory}
-                      disabled={!facts.itemKey || isEstimating}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: !facts.itemKey || isEstimating ? '#9ca3af' : '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: (!facts.itemKey || isEstimating) ? 'not-allowed' : 'pointer',
-                        opacity: (!facts.itemKey || isEstimating) ? 0.6 : 1
-                      }}
-                    >
-                      {isEstimating ? '⏳ 新增中...' : '📦 加入庫存'}
-                    </button>
-                    
-                    <button
-                      onClick={() => setSelectedItemForStorage(null)}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#6b7280',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      ❌ 取消設定
-                    </button>
-                  </div>
-
-                  {/* 提示信息 */}
-                  {!facts.itemKey && (
-                    <div style={{ 
-                      marginTop: 12, 
-                      padding: 8,
-                      backgroundColor: '#fef3c7',
-                      border: '1px solid #f59e0b',
-                      borderRadius: 4,
-                      color: '#92400e',
-                      fontSize: '12px'
-                    }}>
-                      💡 請先選擇或確認「食材種類」再進行保存期限估算
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </div>
