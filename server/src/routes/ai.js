@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { identifyFoodItems, extractTextFromImage } from '../services/aiRecognition.js';
 import { hybridFoodIdentification, hybridTextExtraction, getHybridAIStatus } from '../services/hybridAI.js';
 
 const router = Router();
@@ -155,20 +154,11 @@ router.get('/status', (req, res) => {
     const hybridStatus = getHybridAIStatus();
     
     const status = {
-      aiEnabled: hybridStatus.openai.available || hybridStatus.google.available,
+      aiEnabled: hybridStatus.google.available,
       providers: [],
       capabilities: [],
       hybrid: hybridStatus.hybrid
     };
-
-    if (hybridStatus.openai.available) {
-      status.providers.push({
-        name: 'OpenAI GPT-4V',
-        model: hybridStatus.openai.model,
-        capabilities: hybridStatus.openai.capabilities
-      });
-      status.capabilities.push(...hybridStatus.openai.capabilities);
-    }
 
     if (hybridStatus.google.available) {
       status.providers.push({

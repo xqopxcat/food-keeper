@@ -6,7 +6,7 @@ import {
   useExtractTextFromImageMutation,
   useLazyLookupByBarcodeQuery,
   useGetAiStatusQuery,
-  useAddInventoryItemMutation 
+  useAddInventoryItemMutation
 } from '../redux/services/foodCoreAPI';
 import { inferDefaultsFromProduct } from '../inferDefaults.js';
 import { foodOptions } from '../constants/index.jsx';
@@ -263,15 +263,8 @@ const AiIdentificationView = () => {
       merged.confidence.ocr = 0.8; // OCR 基礎置信度
       merged.hasResults = true;
       
-      // 嘗試從 OCR 文字中提取產品信息
-      const ocrProduct = extractProductFromOCR(ocrResult.text);
-      if (ocrProduct) {
-        merged.products.push({
-          ...ocrProduct,
-          source: 'ocr_extraction',
-          priority: calculateItemPriority(ocrProduct, 'ocr')
-        });
-      }
+      // OCR 純粹作為文字識別，不再嘗試提取產品資訊
+      // 只提供原始文字資料，讓用戶自行判斷
     }
 
     // 合併條碼識別的產品
@@ -336,22 +329,6 @@ const AiIdentificationView = () => {
     if (!items || items.length === 0) return 0;
     const totalConfidence = items.reduce((sum, item) => sum + (item.confidence || 0), 0);
     return totalConfidence / items.length;
-  };
-
-  // 從 OCR 文字提取產品資訊
-  const extractProductFromOCR = (textData) => {
-    if (!textData) return null;
-    
-    const product = {
-      name: textData.productName || null,
-      brand: textData.brand || null,
-      expirationDate: textData.expirationDate || null,
-      barcode: textData.barcode || null,
-      confidence: 0.7
-    };
-    
-    // 只有當至少有產品名稱時才返回
-    return product.name ? product : null;
   };
 
   // 交叉驗證邏輯
@@ -432,41 +409,6 @@ const AiIdentificationView = () => {
     return recommendations;
   };
 
-  // 執行 AI 識別（保留原有功能作為備用）
-  const performIdentification = async (base64Image) => {
-    try {
-      // 並行執行物品識別和文字識別
-      const [foodResult, ocrResult] = await Promise.allSettled([
-        identifyFood({ 
-          imageBase64: base64Image,
-          options: {
-            language: 'zh-TW',
-            includeQuantity: true,
-            includeExpiration: true,
-            includeBrand: true
-          }
-        }).unwrap(),
-        extractText({ imageBase64: base64Image }).unwrap()
-      ]);
-
-      if (foodResult.status === 'fulfilled') {
-        setIdentificationResults(foodResult.value);
-      } else {
-        console.error('Food identification failed:', foodResult.reason);
-      }
-
-      if (ocrResult.status === 'fulfilled') {
-        setOcrResults(ocrResult.value);
-      } else {
-        console.error('OCR failed:', ocrResult.reason);
-      }
-
-    } catch (error) {
-      console.error('AI identification error:', error);
-      alert('AI 識別失敗：' + (error.message || '未知錯誤'));
-    }
-  };
-
   // 重新識別
   const retryIdentification = () => {
     if (capturedImage?.base64) {
@@ -503,9 +445,19 @@ const AiIdentificationView = () => {
         }
       }
 
+      // 根據來源設置不同的標籤和備註
+      const sourceInfo = {
+        'ai_recognition': { tag: 'ai-identified', prefix: 'AI 物件識別' },
+        'ocr_extraction': { tag: 'ocr-identified', prefix: 'OCR 文字識別' },
+        'barcode_lookup': { tag: 'barcode-identified', prefix: '條碼查詢' },
+        'barcode': { tag: 'barcode-identified', prefix: '條碼查詢' }
+      };
+      
+      const sourceData = sourceInfo[item.source] || sourceInfo['ai_recognition'];
+      
       // 構建新增庫存的資料
       const inventoryData = {
-        itemKey: itemKey || `AI_${Date.now()}`, // 如果還是沒有 itemKey，生成一個唯一的
+        itemKey: itemKey || `${sourceData.tag.toUpperCase()}_${Date.now()}`,
         name: item.name || item.englishName || '未知食材',
         brand: item.brand || null,
         quantity: item.quantity || { amount: 1, unit: '個' },
@@ -513,10 +465,44 @@ const AiIdentificationView = () => {
         storageMode: storageMode || 'fridge',
         state: state,
         container: 'none',
-        source: 'ai-identified',
-        notes: `AI 識別: ${item.notes || ''} ${item.shelfLife ? `| 保存期限: ${item.shelfLife.daysMin}-${item.shelfLife.daysMax}天` : ''}`.trim(),
-        tags: ['ai-identified']
+        source: sourceData.tag,
+        notes: buildItemNotes(item, sourceData.prefix),
+        tags: [sourceData.tag],
+        // OCR 特有的欄位
+        ...(item.source === 'ocr_extraction' && {
+          expirationDate: item.expirationDate,
+          ingredients: item.ingredients,
+          nutrition: item.nutrition,
+          rawText: item.rawText
+        })
       };
+
+      // 建構項目備註的輔助函數
+      function buildItemNotes(item, sourcePrefix) {
+        const notes = [`${sourcePrefix}識別`];
+        
+        if (item.confidence) {
+          notes.push(`信心度: ${Math.round(item.confidence * 100)}%`);
+        }
+        
+        if (item.shelfLife) {
+          notes.push(`預估保存期限: ${item.shelfLife.daysMin}-${item.shelfLife.daysMax}天`);
+        }
+        
+        if (item.expirationDate) {
+          notes.push(`包裝標示效期: ${item.expirationDate}`);
+        }
+        
+        if (item.category) {
+          notes.push(`類別: ${item.category}`);
+        }
+        
+        if (item.notes) {
+          notes.push(item.notes);
+        }
+        
+        return notes.join(' | ');
+      }
 
       console.log('Inventory data to submit:', inventoryData);
 
@@ -562,7 +548,8 @@ const AiIdentificationView = () => {
         }}>
           <p>⚠️ AI 識別功能尚未啟用</p>
           <p style={{ fontSize: '14px', color: '#92400e' }}>
-            請在伺服器設定中配置 OpenAI API Key 以啟用此功能
+            {/* OCR 識別已停用 - 等待選擇新的 AI 提供商 */}
+            <div>文字識別功能暫時停用，等待重新評估 AI 提供商</div>
           </p>
         </div>
       </div>
@@ -786,9 +773,10 @@ const AiIdentificationView = () => {
 
                   {/* 識別到的產品數量 */}
                   <div style={{ marginBottom: 12, fontSize: '14px' }}>
-                    <div>🍎 AI識別食材: {unifiedResults.foodItems.length} 項</div>
-                    <div>📦 條碼產品: {unifiedResults.barcodeProducts.length} 項</div>
-                    <div>📝 文字識別: {unifiedResults.extractedText ? '成功' : '無'}</div>
+                    <div>AI識別食材: {unifiedResults.foodItems.filter(item => item.source === 'ai_recognition').length} 項</div>
+                    <div>文字識別產品: {unifiedResults.foodItems.filter(item => item.source === 'ocr_extraction').length} 項</div>
+                    <div>條碼產品: {unifiedResults.barcodeProducts.length} 項</div>
+                    <div>原始文字: {unifiedResults.extractedText ? '已擷取' : '無'}</div>
                   </div>
 
                   {/* 智慧建議 */}
@@ -839,7 +827,7 @@ const AiIdentificationView = () => {
                 
                 {barcodeResults.success ? (
                   <div style={{ display: 'grid', gap: 12 }}>
-                    {barcodeResults.products.map((product, index) => (
+                    {barcodeResults.products.map(({ product }, index) => (
                       <div
                         key={index}
                         style={{
@@ -1078,46 +1066,55 @@ const AiIdentificationView = () => {
                 </h3>
                 
                 {ocrResults.success ? (
-                  <div style={{
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 8,
-                    padding: 12,
-                    backgroundColor: 'white'
-                  }}>
-                    {Object.entries(ocrResults.text).map(([key, value]) => (
-                      value && key !== 'allText' && (
-                        <div key={key} style={{ marginBottom: 8, fontSize: '14px' }}>
-                          <strong style={{ color: '#374151' }}>
-                            {key === 'productName' ? '產品名稱' :
-                             key === 'brand' ? '品牌' :
-                             key === 'expirationDate' ? '保存期限' :
-                             key === 'barcode' ? '條碼' :
-                             key === 'ingredients' ? '成分' :
-                             key === 'nutrition' ? '營養標示' : key}:
-                          </strong>
-                          <span style={{ marginLeft: 8 }}>{value}</span>
-                        </div>
-                      )
-                    ))}
-                    
-                    {ocrResults.text.allText && (
-                      <details style={{ marginTop: 12 }}>
-                        <summary style={{ cursor: 'pointer', color: '#6b7280' }}>
-                          查看所有識別文字
-                        </summary>
-                        <div style={{
-                          marginTop: 8,
-                          padding: 8,
-                          backgroundColor: '#f9fafb',
-                          borderRadius: 4,
-                          fontSize: '12px',
-                          fontFamily: 'monospace',
-                          whiteSpace: 'pre-wrap'
-                        }}>
-                          {ocrResults.text.allText}
-                        </div>
-                      </details>
-                    )}
+                  <div>
+                    {/* 顯示原始 OCR 文字，不再提取產品 */}
+                    <div style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      padding: 12,
+                      backgroundColor: 'white'
+                    }}>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#374151' }}>
+                        🔍 結構化文字識別結果
+                      </h4>
+                      
+                      {Object.entries(ocrResults.text).map(([key, value]) => (
+                        value && key !== 'allText' && (
+                          <div key={key} style={{ marginBottom: 6, fontSize: '13px' }}>
+                            <strong style={{ color: '#374151' }}>
+                              {key === 'productName' ? '產品名稱' :
+                               key === 'brand' ? '品牌' :
+                               key === 'expirationDate' ? '保存期限' :
+                               key === 'barcode' ? '條碼' :
+                               key === 'ingredients' ? '成分' :
+                               key === 'nutrition' ? '營養標示' : key}:
+                            </strong>
+                            <span style={{ marginLeft: 8 }}>{value}</span>
+                          </div>
+                        )
+                      ))}
+                      
+                      {ocrResults.text.allText && (
+                        <details style={{ marginTop: 12 }}>
+                          <summary style={{ cursor: 'pointer', color: '#6b7280', fontSize: '12px' }}>
+                            查看完整識別文字
+                          </summary>
+                          <div style={{
+                            marginTop: 8,
+                            padding: 8,
+                            backgroundColor: '#f9fafb',
+                            borderRadius: 4,
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            whiteSpace: 'pre-wrap',
+                            maxHeight: '200px',
+                            overflow: 'auto'
+                          }}>
+                            {ocrResults.text.allText}
+                          </div>
+                        </details>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div style={{
