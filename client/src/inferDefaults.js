@@ -222,7 +222,6 @@ export function inferDefaultsFromProduct(product) {
   
   // 再嘗試一般食材分類（使用統一的 nameToItemKey）
   for (const item of nameToItemKey) {
-    console.log(item)
     if (item.match.test(hay)) {
       const storageMode = itemKeyToStorageMode[item.itemKey] || 'room';
       console.log('Inferred from general food category:', { itemKey: item.itemKey, storageMode });

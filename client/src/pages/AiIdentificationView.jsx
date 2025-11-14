@@ -497,17 +497,16 @@ const AiIdentificationView = () => {
 
       // 根據來源設置不同的標籤和備註
       const sourceInfo = {
-        'ai_recognition': { tag: 'ai-identified', prefix: 'AI 物件識別' },
-        'ocr_extraction': { tag: 'ocr-identified', prefix: 'OCR 文字識別' },
-        'barcode_lookup': { tag: 'barcode-identified', prefix: '條碼查詢' },
-        'barcode': { tag: 'barcode-identified', prefix: '條碼查詢' }
+        'google-vision': { source: 'ai-identified', prefix: 'AI 物件識別' },
+        'ocr-identified': { source: 'ocr-identified', prefix: 'OCR 文字識別' },
+        'barcode_lookup': { source: 'barcode-identified', prefix: '條碼查詢' },
+        'barcode': { source: 'barcode-identified', prefix: '條碼查詢' }
       };
       
-      const sourceData = sourceInfo[item.source] || sourceInfo['ai-identified'];
-      
+      const sourceData = sourceInfo[item.source] || { source: 'ai-identified', prefix: 'AI 識別' };
       // 構建新增庫存的資料
       const inventoryData = {
-        itemKey: itemKey || `${sourceData.tag.toUpperCase()}_${Date.now()}`,
+        itemKey: itemKey || `${sourceData.source.toUpperCase()}_${Date.now()}`,
         name: item.name || item.englishName || '未知食材',
         brand: item.brand || null,
         quantity: item.quantity || { amount: 1, unit: '個' },
@@ -515,21 +514,17 @@ const AiIdentificationView = () => {
         storageMode: storageMode || 'fridge',
         state: state,
         container: 'none',
-        source: sourceData.tag,
+        source: sourceData.source,
         notes: buildItemNotes(item, sourceData.prefix),
-        tags: [sourceData.tag],
         // OCR 特有的欄位
-        ...(item.source === 'ocr_extraction' && {
+        ...(item.source === 'ocr-identified' && {
           expirationDate: item.expirationDate,
-          ingredients: item.ingredients,
-          nutrition: item.nutrition,
-          rawText: item.rawText
         })
       };
 
       // 建構項目備註的輔助函數
       function buildItemNotes(item, sourcePrefix) {
-        const notes = [`${sourcePrefix}識別`];
+        const notes = [`${sourcePrefix}`];
         
         if (item.confidence) {
           notes.push(`信心度: ${Math.round(item.confidence * 100)}%`);
@@ -587,7 +582,13 @@ const AiIdentificationView = () => {
 
   // 選擇項目進行庫存設定
   const selectItemForStorage = (item) => {
-    setSelectedItemForStorage(item);
+    // 為物件識別結果添加來源標記
+    const itemWithSource = {
+      ...item,
+      source: item.source || 'google-vision'
+    };
+    
+    setSelectedItemForStorage(itemWithSource);
     
     // 根據 AI 識別結果自動填入預設值
     if (item) {
@@ -824,6 +825,11 @@ const AiIdentificationView = () => {
                   <div>信心度：{Math.round((selectedItemForStorage.confidence || 0) * 100)}%</div>
                   <div>分類：{selectedItemForStorage.category || '未分類'}</div>
                   <div>代碼：{selectedItemForStorage.itemKey || '自動推測'}</div>
+                  <div>來源：{
+                    selectedItemForStorage.source === 'ocr-identified' ? '📝 文字識別 (Gemini 2.5)' :
+                    selectedItemForStorage.source === 'google-vision' ? '🔍 物件識別 (Google Vision)' :
+                    '🤖 AI 識別'
+                  }</div>
                 </div>
               </div>
 
@@ -1008,7 +1014,7 @@ const AiIdentificationView = () => {
                       <input
                         type="number"
                         min="0"
-                        step="0.1"
+                        step="1"
                         value={inventoryData.quantity.amount}
                         onChange={e => setInventoryData(data => ({
                           ...data,
@@ -1409,7 +1415,7 @@ const AiIdentificationView = () => {
                   {/* 識別到的產品數量 */}
                   <div style={{ marginBottom: 12, fontSize: '14px' }}>
                     <div>AI識別食材: {unifiedResults.foodItems.filter(item => item.source === 'ai-identified').length} 項</div>
-                    <div>文字識別產品: {unifiedResults.foodItems.filter(item => item.source === 'ocr_extraction').length} 項</div>
+                    <div>文字識別產品: {unifiedResults.foodItems.filter(item => item.source === 'ocr-identified').length} 項</div>
                     <div>條碼產品: {unifiedResults.barcodeProducts.length} 項</div>
                     <div>原始文字: {unifiedResults.extractedText ? '已擷取' : '無'}</div>
                   </div>
@@ -1487,7 +1493,7 @@ const AiIdentificationView = () => {
                             </div>
                           </div>
                           <button
-                            onClick={() => addToInventory(product)}
+                            onClick={() => addToInventory({ ...product, source: 'barcode' })}
                             disabled={isAdding}
                             style={{
                               padding: '4px 8px',
@@ -1622,7 +1628,7 @@ const AiIdentificationView = () => {
                               {selectedItemForStorage === item ? '✅ 設定中' : '📦 詳細設定'}
                             </button>
                             <button
-                              onClick={() => addToInventory(item)}
+                              onClick={() => addToInventory({ ...item, source: 'google-vision' })}
                               disabled={isAdding}
                               style={{
                                 padding: '4px 8px',
@@ -1736,16 +1742,87 @@ const AiIdentificationView = () => {
                 
                 {ocrResults.success ? (
                   <div>
-                    {/* 顯示原始 OCR 文字，不再提取產品 */}
+                    {/* 顯示結構化 OCR 識別結果並提供庫存功能 */}
                     <div style={{
                       border: '1px solid #e5e7eb',
                       borderRadius: 8,
                       padding: 12,
                       backgroundColor: 'white'
                     }}>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#374151' }}>
-                        🔍 結構化文字識別結果
-                      </h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <h4 style={{ margin: 0, fontSize: '14px', color: '#374151' }}>
+                          🔍 結構化文字識別結果
+                        </h4>
+                        
+                        {/* 快速操作按鈕 */}
+                        {ocrResults.text && (ocrResults.text.name || ocrResults.text.itemKey) && (
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={() => {
+                                // 轉換 OCR 結果為物件格式
+                                const ocrItem = {
+                                  name: ocrResults.text.name || '未知產品',
+                                  englishName: ocrResults.text.englishName || ocrResults.text.name || 'Unknown Product',
+                                  itemKey: ocrResults.text.itemKey || null,
+                                  brand: ocrResults.text.brand || null,
+                                  category: ocrResults.text.category || null,
+                                  quantity: ocrResults.text.quantity || { amount: 1, unit: '個' },
+                                  expirationDate: ocrResults.text.expirationDate || null,
+                                  storageMode: ocrResults.text.storageMode || 'fridge',
+                                  state: ocrResults.text.state || 'whole',
+                                  barcode: ocrResults.text.barcode || null,
+                                  confidence: ocrResults.confidence || 0.8,
+                                  source: 'ocr-identified'
+                                };
+                                setSelectedItemForStorage(ocrItem);
+                                setShowStorageModal(true);
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              📦 詳細設定
+                            </button>
+                            <button
+                              onClick={() => {
+                                const ocrItem = {
+                                  name: ocrResults.text.name || '未知產品',
+                                  itemKey: ocrResults.text.itemKey || null,
+                                  brand: ocrResults.text.brand || null,
+                                  category: ocrResults.text.category || null,
+                                  quantity: ocrResults.text.quantity || { amount: 1, unit: '個' },
+                                  expirationDate: ocrResults.text.expirationDate || null,
+                                  storageMode: ocrResults.text.storageMode || 'fridge',
+                                  state: ocrResults.text.state || 'whole',
+                                  barcode: ocrResults.text.barcode || null,
+                                  confidence: ocrResults.confidence || 0.8,
+                                  source: 'ocr-identified'
+                                };
+                                addToInventory(ocrItem);
+                              }}
+                              disabled={isAdding}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: isAdding ? '#9ca3af' : '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: isAdding ? 'not-allowed' : 'pointer',
+                                opacity: isAdding ? 0.6 : 1
+                              }}
+                            >
+                              {isAdding ? '⏳ 新增中...' : '⚡ 快速加入'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       
                       {Object.entries(ocrResults.text).map(([key, value]) => (
                         value && key !== 'allText' && (
