@@ -195,6 +195,375 @@
       "tips": "開封後冷藏密封保存，避免異味吸附，建議 2–4 個月內食用完畢。",
       "baseConfidence": 0.8
     }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Mango"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 3,
+      "daysMax": 5,
+      "tips": "常溫催熟，軟熟後可冷藏1-2天延長保存",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Kiwi"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 7,
+      "daysMax": 14,
+      "tips": "常溫保存可催熟，熟後冷藏3-5天",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Pear"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 10,
+      "daysMax": 21,
+      "tips": "透氣袋冷藏，避免與蘋果同放加速成熟",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Papaya"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 2,
+      "daysMax": 4,
+      "tips": "常溫催熟至軟身，切開後冷藏2天內食用",
+      "baseConfidence": 0.8
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Cabbage"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 7,
+      "daysMax": 14,
+      "tips": "整顆冷藏，外層葉片略乾可剝除續用",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Lettuce_iceberg"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 5,
+      "daysMax": 10,
+      "tips": "整顆包紙巾冷藏，避免積水變黑",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Green_bean"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 3,
+      "daysMax": 5,
+      "tips": "透氣袋冷藏，避免水氣悶濕",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Eggplant"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 3,
+      "daysMax": 5,
+      "tips": "紙巾包裝冷藏，避免冷傷變黑",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Sweet_potato"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 14,
+      "daysMax": 21,
+      "tips": "陰涼通風處，避免日照發芽",
+      "baseConfidence": 0.8
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Cauliflower"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 5,
+      "daysMax": 7,
+      "tips": "直立冷藏，保持乾燥避免變黃",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Scallion"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 7,
+      "daysMax": 10,
+      "tips": "根部沾濕紙巾，直立冷藏或水耕保存",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Celery"],
+      "storageMode": ["fridge"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 7,
+      "daysMax": 10,
+      "tips": "包保鮮膜冷藏，可水耕延長保存",
+      "baseConfidence": 0.8
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Salmon"],
+      "storageMode": ["fridge"],
+      "state": ["raw"]
+    },
+    "result": {
+      "daysMin": 1,
+      "daysMax": 2,
+      "tips": "低溫冷藏，當日烹調最佳，避免反覆解凍",
+      "baseConfidence": 0.9
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Tuna"],
+      "storageMode": ["fridge"],
+      "state": ["raw"]
+    },
+    "result": {
+      "daysMin": 1,
+      "daysMax": 1,
+      "tips": "新鮮鮪魚當日食用，生食級須確認來源",
+      "baseConfidence": 0.9
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Canned_food"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 365,
+      "daysMax": 1095,
+      "tips": "陰涼乾燥保存，檢查罐身無凹陷變形",
+      "baseConfidence": 0.9
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Canned_food"],
+      "storageMode": ["fridge"],
+      "state": ["opened"]
+    },
+    "result": {
+      "daysMin": 2,
+      "daysMax": 3,
+      "tips": "開罐後轉入密封容器冷藏，2-3天內食用完畢",
+      "baseConfidence": 0.9
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Honey"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 9999,
+      "daysMax": 9999,
+      "tips": "蜂蜜天然防腐，密封避光保存，結晶屬正常現象",
+      "baseConfidence": 1.0
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Jam"],
+      "storageMode": ["fridge"],
+      "state": ["opened"]
+    },
+    "result": {
+      "daysMin": 30,
+      "daysMax": 60,
+      "tips": "開封後冷藏，使用乾淨湯匙取用避免污染",
+      "baseConfidence": 0.8
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Green_tea"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 365,
+      "daysMax": 540,
+      "tips": "密封避光避潮，開封後建議冷藏保存香氣",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Coffee_beans"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 14,
+      "daysMax": 30,
+      "tips": "密封避光保存，研磨後盡快沖煮，可冷凍延長保存",
+      "baseConfidence": 0.8
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Beverage_juice"],
+      "storageMode": ["fridge"],
+      "state": ["opened"]
+    },
+    "result": {
+      "daysMin": 3,
+      "daysMax": 5,
+      "tips": "開封後冷藏，盡快飲用避免變質",
+      "baseConfidence": 0.8
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Soft_drink"],
+      "storageMode": ["room"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 180,
+      "daysMax": 365,
+      "tips": "陰涼避光保存，開封後冷藏並盡快飲用",
+      "baseConfidence": 0.8
+    }
+  },
+
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Frozen_vegetable"],
+      "storageMode": ["freezer"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 180,
+      "daysMax": 365,
+      "tips": "冷凍保存，烹調前無需解凍直接下鍋",
+      "baseConfidence": 0.9
+    }
+  },
+  {
+    "enabled": true,
+    "priority": 10,
+    "conditions": {
+      "itemKey": ["Frozen_fruit"],
+      "storageMode": ["freezer"],
+      "state": ["whole"]
+    },
+    "result": {
+      "daysMin": 180,
+      "daysMax": 365,
+      "tips": "冷凍保存，可直接打果昔或稍微解凍食用",
+      "baseConfidence": 0.9
+    }
   }
 
 
