@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import InventoryItem from '../components/InventoryItem.jsx';
 import { 
   useGetInventoryQuery,
   useGetExpiringItemsQuery,
@@ -223,145 +224,15 @@ const InventoryView = () => {
           </div>
         ) : (
           inventory.map(item => (
-            <div 
-              key={item._id} 
-              style={{
-                padding: 16,
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-                backgroundColor: item.status === 'consumed' ? '#f9fafb' : 'white',
-                borderLeftWidth: 4,
-                borderLeftColor: item.status === 'consumed' ? '#9ca3af' : (urgencyConfig[item.urgency]?.color || '#e5e7eb'),
-                opacity: item.status === 'consumed' ? 0.7 : 1
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <input
-                  type="checkbox"
-                  checked={selectedItems.has(item._id)}
-                  onChange={() => toggleItemSelection(item._id)}
-                  disabled={item.status === 'consumed'}
-                />
-                
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <h4 style={{ 
-                          margin: 0, 
-                          fontSize: 16,
-                          textDecoration: item.status === 'consumed' ? 'line-through' : 'none'
-                        }}>
-                          {item.name}
-                        </h4>
-                        {item.status === 'consumed' && (
-                          <span style={{
-                            fontSize: 12,
-                            padding: '2px 8px',
-                            backgroundColor: '#10b981',
-                            color: 'white',
-                            borderRadius: '12px',
-                            fontWeight: 'bold'
-                          }}>
-                            ✅ 已消耗
-                          </span>
-                        )}
-                      </div>
-                      {item.brand && <div style={{ fontSize: 14, color: '#6b7280' }}>{item.brand}</div>}
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>
-                        {item.quantity?.amount || 1} {item.quantity?.unit || '個'} • {item.location?.replace('_', ' ') || 'unknown'} • {item.storageMode}
-                      </div>
-                    </div>
-                    
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ 
-                        fontSize: 14, 
-                        fontWeight: 'bold',
-                        color: urgencyConfig[item.urgency]?.color || '#666'
-                      }}>
-                        {urgencyConfig[item.urgency]?.icon} {formatDate(item.expiresMaxAt)}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#6b7280' }}>
-                        {item.daysLeft !== null ? 
-                          (item.daysLeft >= 0 ? `還有 ${item.daysLeft} 天` : `過期 ${Math.abs(item.daysLeft)} 天`) : 
-                          '未知'
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {item.notes && (
-                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>
-                      💭 {item.notes}
-                    </div>
-                  )}
-                  
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    {item.status === 'consumed' ? (
-                      <>
-                        <button 
-                          onClick={() => handleStatusUpdate(item._id, 'fresh')}
-                          style={{ 
-                            padding: '4px 8px', 
-                            fontSize: 12, 
-                            backgroundColor: '#3b82f6', 
-                            color: 'white',
-                            border: 'none', 
-                            borderRadius: '4px' 
-                          }}
-                        >
-                          恢復庫存
-                        </button>
-                        
-                        <button 
-                          onClick={() => handleDeleteItem(item._id)}
-                          style={{ 
-                            padding: '4px 8px', 
-                            fontSize: 12, 
-                            backgroundColor: '#ef4444', 
-                            color: 'white',
-                            border: 'none', 
-                            borderRadius: '4px' 
-                          }}
-                        >
-                          刪除
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => handleStatusUpdate(item._id, 'consumed')}
-                          style={{ 
-                            padding: '4px 8px', 
-                            fontSize: 12, 
-                            backgroundColor: '#10b981', 
-                            color: 'white',
-                            border: 'none', 
-                            borderRadius: '4px' 
-                          }}
-                        >
-                          標記已消耗
-                        </button>
-                        
-                        <button 
-                          onClick={() => handleDeleteItem(item._id)}
-                          style={{ 
-                            padding: '4px 8px', 
-                            fontSize: 12, 
-                            backgroundColor: '#ef4444', 
-                            color: 'white',
-                            border: 'none', 
-                            borderRadius: '4px' 
-                          }}
-                        >
-                          刪除
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <InventoryItem
+              key={item._id}
+              item={item}
+              isSelected={selectedItems.has(item._id)}
+              onSelect={() => toggleItemSelection(item._id)}
+              onStatusUpdate={handleStatusUpdate}
+              onDelete={handleDeleteItem}
+              showCheckbox={true}
+            />
           ))
         )}
       </div>
