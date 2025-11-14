@@ -1517,7 +1517,13 @@ const AiIdentificationView = () => {
                             <div><strong>分類:</strong> {product.category}</div>
                           )}
                           {product.quantity && (
-                            <div><strong>規格:</strong> {product.quantity}</div>
+                            <div>
+                              <strong>規格:</strong> 
+                              {typeof product.quantity === 'object' ? 
+                                ` ${product.quantity.amount || ''} ${product.quantity.unit || ''}`.trim() : 
+                                product.quantity
+                              }
+                            </div>
                           )}
                         </div>
 
@@ -1745,14 +1751,31 @@ const AiIdentificationView = () => {
                         value && key !== 'allText' && (
                           <div key={key} style={{ marginBottom: 6, fontSize: '13px' }}>
                             <strong style={{ color: '#374151' }}>
-                              {key === 'productName' ? '產品名稱' :
-                               key === 'brand' ? '品牌' :
-                               key === 'expirationDate' ? '保存期限' :
-                               key === 'barcode' ? '條碼' :
-                               key === 'ingredients' ? '成分' :
-                               key === 'nutrition' ? '營養標示' : key}:
+                              {
+                                key === 'name' ? '產品名稱' :
+                                key === 'itemKey' ? '產品類別' :
+                                key === 'brand' ? '品牌' :
+                                key === 'expirationDate' ? '保存期限' :
+                                key === 'barcode' ? '條碼' :
+                                key === 'ingredients' ? '成分' :
+                                key === 'nutrition' ? '營養標示' :
+                                key === 'quantity' ? '數量' :
+                                key === 'category' ? '類別' :
+                                key === 'storageMode' ? '保存方式' :
+                                key === 'tips' ? '提示' :
+                                key === 'notes' ? '備註' :
+                                key === 'state' ? '狀態' : key
+                              }:
                             </strong>
-                            <span style={{ marginLeft: 8 }}>{value}</span>
+                            <span style={{ marginLeft: 8 }}>
+                              {typeof value === 'object' && value !== null ? (
+                                key === 'quantity' ? 
+                                  `${value.amount || ''} ${value.unit || ''}`.trim() :
+                                  JSON.stringify(value)
+                              ) : (
+                                String(value)
+                              )}
+                            </span>
                           </div>
                         )
                       ))}
