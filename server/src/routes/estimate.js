@@ -86,7 +86,6 @@ router.post('/', async (req, res) => {
       location: location || 'fridge_main',
       source: barcode ? 'barcode' : source,
       notes: notes || '',
-      tags: tags || []
     };
     
     const savedItem = await Item.create(itemData);

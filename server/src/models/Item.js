@@ -48,13 +48,12 @@ const ItemSchema = new mongoose.Schema({
   // 來源追蹤
   source: {
     type: String,
-    enum: ['manual', 'barcode', 'photo', 'receipt', 'ai-identified'],
+    enum: ['manual', 'barcode', 'photo', 'receipt', 'ai-identified', 'ocr-identified', 'barcode-identified'],
     default: 'manual'
   },
   
   // 額外資訊
   notes: String,
-  tags: [String],
 
   // 時間欄位
   acquiredAt: { type: Date, default: Date.now },    // 入庫時間（預設現在）

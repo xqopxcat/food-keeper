@@ -20,7 +20,6 @@ router.post('/add', async (req, res) => {
       location,
       source = 'manual',
       notes,
-      tags
     } = req.body;
 
     // 驗證必要欄位
@@ -67,7 +66,6 @@ router.post('/add', async (req, res) => {
       location,
       source,
       notes,
-      tags: tags || [],
       // 保存期限相關
       acquiredAt: now,
       expiresMinAt,
