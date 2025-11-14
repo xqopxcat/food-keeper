@@ -555,7 +555,11 @@ const AiIdentificationView = () => {
       const result = await addInventoryItem(inventoryData).unwrap();
       
       if (result.success) {
-        alert(`✅ 已成功新增「${item.name}」到庫存！\n\n保存期限: ${result.estimate?.shelfLifeDays?.min || 0}-${result.estimate?.shelfLifeDays?.max || 0} 天\n保存建議: ${result.estimate?.tips || '無'}`);
+        const expirationInfo = result.estimate?.usedPackageExpiration 
+          ? '📦 使用包裝標示效期' 
+          : '🧠 根據食材規則計算';
+          
+        alert(`✅ 已成功新增「${item.name}」到庫存！\n\n保存期限: ${result.estimate?.shelfLifeDays?.min || 0}-${result.estimate?.shelfLifeDays?.max || 0} 天\n到期日計算: ${expirationInfo}\n保存建議: ${result.estimate?.tips || '無'}`);
         
         // 可以選擇是否要重置識別結果
         // reset();

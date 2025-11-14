@@ -57,6 +57,7 @@ const ItemSchema = new mongoose.Schema({
 
   // 時間欄位
   acquiredAt: { type: Date, default: Date.now },    // 入庫時間（預設現在）
+  expirationDate: Date,   // 包裝上標示的到期日期（如果有的話）
   openedAt: Date,         // 若有開封/切開時間
   expiresMinAt: Date,     // 依 daysMin 算出的日期
   expiresMaxAt: Date,     // 依 daysMax 算出的日期

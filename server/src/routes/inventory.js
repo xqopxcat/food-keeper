@@ -14,6 +14,7 @@ router.post('/add', async (req, res) => {
       brand,
       quantity,
       purchaseDate,
+      expirationDate, // 新增：包裝上標示的到期日
       storageMode,
       state = 'whole',
       container = 'none',
@@ -48,9 +49,22 @@ router.post('/add', async (req, res) => {
     // 計算到期日期
     const now = new Date();
     const purchaseDateTime = purchaseDate ? new Date(purchaseDate) : now;
-    const addDays = (d) => new Date(purchaseDateTime.getTime() + d * 24*60*60*1000);
-    const expiresMinAt = addDays(result.daysMin || 0);
-    const expiresMaxAt = addDays(result.daysMax || 0);
+    
+    let expiresMinAt, expiresMaxAt;
+    
+    if (expirationDate) {
+      // 如果有包裝標示的到期日，則以此為準
+      const expDate = new Date(expirationDate);
+      expiresMinAt = expDate;
+      expiresMaxAt = expDate;
+      console.log(`使用包裝標示到期日: ${expDate.toISOString()}`);
+    } else {
+      // 沒有包裝到期日，則根據規則計算
+      const addDays = (d) => new Date(purchaseDateTime.getTime() + d * 24*60*60*1000);
+      expiresMinAt = addDays(result.daysMin || 0);
+      expiresMaxAt = addDays(result.daysMax || 0);
+      console.log(`根據規則計算到期日: ${expiresMinAt.toISOString()} ~ ${expiresMaxAt.toISOString()}`);
+    }
 
     // 創建庫存項目
     const inventoryItem = new Item({
@@ -76,7 +90,9 @@ router.post('/add', async (req, res) => {
       confidence: result.confidence,
       ruleId: result.ruleId,
       season: 'summer',
-      locale: 'TW'
+      locale: 'TW',
+      // 包裝標示到期日（如果有的話）
+      ...(expirationDate && { expirationDate: new Date(expirationDate) })
     });
 
     const saved = await inventoryItem.save();
@@ -90,7 +106,10 @@ router.post('/add', async (req, res) => {
           min: result.daysMin,
           max: result.daysMax
         },
-        tips: result.tips
+        tips: result.tips,
+        // 指示是否使用了包裝到期日
+        usedPackageExpiration: !!expirationDate,
+        expirationSource: expirationDate ? 'package' : 'calculated'
       }
     });
 
