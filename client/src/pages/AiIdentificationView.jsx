@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Camera from '../components/Camera.jsx';
 import FoodSelector from '../components/FoodSelector.jsx';
 import InventoryForm from '../components/InventoryForm.jsx';
@@ -16,6 +16,9 @@ import { inferDefaultsFromProduct } from '../inferDefaults.js';
 import { useInventoryManagement, useStorageContext } from '../hooks/useInventoryData.js';
 import { useAddToInventory } from '../hooks/useInventoryActions.js';
 import { foodOptions, unitOptions, locationOptions } from '../constants/index.jsx';
+// 開發模式支援
+import { DEV_CONFIG, canUseAPI, recordAPIUsage, getRemainingQuota } from '../config/developmentMode.js';
+import { mockIdentifyFood, mockExtractText, mockLookupBarcode, generateRandomMockData } from '../services/mockApiService.js';
 
 const AiIdentificationView = () => {
   const [mode, setMode] = useState('camera'); // 'camera', 'upload', 'results'
@@ -26,6 +29,11 @@ const AiIdentificationView = () => {
   const [unifiedResults, setUnifiedResults] = useState(null);
   const [selectedItemForStorage, setSelectedItemForStorage] = useState(null);
   const [showStorageModal, setShowStorageModal] = useState(false);
+  
+  // 開發模式狀態
+  const [isDevelopmentMode, setIsDevelopmentMode] = useState(DEV_CONFIG.useMockData);
+  const [apiQuota, setApiQuota] = useState(getRemainingQuota());
+  const [showDevPanel, setShowDevPanel] = useState(DEV_CONFIG.isDevelopment);
 
   // 使用自定義 hooks
   const { facts, setFacts, resetFacts } = useStorageContext();
@@ -97,7 +105,19 @@ const AiIdentificationView = () => {
       let aiResults = null;
       try {
         console.log('Starting AI identification...');
-        aiResults = await identifyFood({ imageBase64: base64Image }).unwrap();
+        
+        if (isDevelopmentMode || !canUseAPI('vision')) {
+          console.log('🧪 Using mock AI identification');
+          aiResults = await mockIdentifyFood(base64Image);
+          if (!isDevelopmentMode) {
+            aiResults.warning = '已達今日 Vision API 配額限制，使用模擬數據';
+          }
+        } else {
+          aiResults = await identifyFood({ imageBase64: base64Image }).unwrap();
+          recordAPIUsage('vision');
+          setApiQuota(getRemainingQuota());
+        }
+        
         console.log('AI identification result:', aiResults);
         setIdentificationResults(aiResults);
       } catch (error) {
@@ -109,7 +129,19 @@ const AiIdentificationView = () => {
       let textResults = null;
       try {
         console.log('Starting text extraction...');
-        textResults = await extractText({ imageBase64: base64Image }).unwrap();
+        
+        if (isDevelopmentMode || !canUseAPI('gemini')) {
+          console.log('🧪 Using mock OCR extraction');
+          textResults = await mockExtractText(base64Image);
+          if (!isDevelopmentMode) {
+            textResults.warning = '已達今日 Gemini API 配額限制，使用模擬數據';
+          }
+        } else {
+          textResults = await extractText({ imageBase64: base64Image }).unwrap();
+          recordAPIUsage('gemini');
+          setApiQuota(getRemainingQuota());
+        }
+        
         console.log('Text extraction result:', textResults);
         setOcrResults(textResults);
       } catch (error) {
@@ -117,7 +149,7 @@ const AiIdentificationView = () => {
         setOcrResults({ success: false, error: error.message });
       }
 
-      // 3. 條碼識別
+      // 3. 條碼識別 (ZXing 本地處理，不消耗 API)
       let barcodeResults = null;
       try {
         console.log('Starting barcode detection...');
@@ -677,10 +709,92 @@ const AiIdentificationView = () => {
 
       {/* 主界面頭部 */}
       <div style={{ padding: 16, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: '0 0 8px 0' }}>🤖 智慧統一識別</h2>
-        <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
-          一次拍照，同時進行 AI 物件識別、OCR 文字識別、條碼掃描，並智慧合併結果
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ margin: '0 0 8px 0' }}>🤖 智慧統一識別</h2>
+            <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
+              一次拍照，同時進行 AI 物件識別、OCR 文字識別、條碼掃描，並智慧合併結果
+            </p>
+          </div>
+          
+          {/* 開發者工具按鈕 */}
+          {showDevPanel && (
+            <button
+              onClick={() => setShowDevPanel(!showDevPanel)}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              🛠️ 開發工具
+            </button>
+          )}
+        </div>
+        
+        {/* 開發者面板 */}
+        {showDevPanel && (
+          <div style={{
+            marginTop: 12,
+            padding: 12,
+            backgroundColor: isDevelopmentMode ? '#fef3c7' : '#f0f9ff',
+            border: `1px solid ${isDevelopmentMode ? '#f59e0b' : '#3b82f6'}`,
+            borderRadius: 8,
+            fontSize: '12px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <strong style={{ color: isDevelopmentMode ? '#92400e' : '#1e40af' }}>
+                🧪 開發模式 {isDevelopmentMode ? '(模擬數據)' : '(真實 API)'}
+              </strong>
+              <button
+                onClick={() => setIsDevelopmentMode(!isDevelopmentMode)}
+                style={{
+                  padding: '2px 6px',
+                  backgroundColor: isDevelopmentMode ? '#fbbf24' : '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '10px'
+                }}
+              >
+                {isDevelopmentMode ? '切換到真實 API' : '切換到模擬數據'}
+              </button>
+            </div>
+            
+            {!isDevelopmentMode && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Vision API:</span>
+                  <span style={{ marginLeft: 4, fontWeight: 'bold', color: apiQuota.vision > 0 ? '#059669' : '#dc2626' }}>
+                    {apiQuota.vision}/10
+                  </span>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Gemini API:</span>
+                  <span style={{ marginLeft: 4, fontWeight: 'bold', color: apiQuota.gemini > 0 ? '#059669' : '#dc2626' }}>
+                    {apiQuota.gemini}/5
+                  </span>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>OCR:</span>
+                  <span style={{ marginLeft: 4, fontWeight: 'bold', color: apiQuota.ocr > 0 ? '#059669' : '#dc2626' }}>
+                    {apiQuota.ocr}/8
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {isDevelopmentMode && (
+              <div style={{ color: '#92400e' }}>
+                💡 目前使用模擬數據，不會消耗 API 配額。切換到真實 API 進行最終測試。
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 模式切換按鈕 */}
