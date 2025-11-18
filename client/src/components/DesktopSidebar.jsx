@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DESIGN_SYSTEM, COMMON_STYLES } from '../styles/designSystem.js';
 
 const DesktopSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    const profileData = localStorage.getItem('userProfile');
+    if (profileData) {
+      setUserProfile(JSON.parse(profileData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userProfile');
+    navigate('/login');
+  };
 
   const navItems = [
     {
@@ -147,6 +161,89 @@ const DesktopSidebar = () => {
           </button>
         ))}
       </nav>
+
+      {/* 使用者資訊區域 */}
+      {userProfile && (
+        <div style={{
+          padding: DESIGN_SYSTEM.spacing.md,
+          borderTop: `1px solid ${DESIGN_SYSTEM.colors.gray[100]}`,
+          backgroundColor: DESIGN_SYSTEM.colors.gray[50]
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: DESIGN_SYSTEM.spacing.sm,
+            marginBottom: DESIGN_SYSTEM.spacing.md
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: DESIGN_SYSTEM.colors.primary[100],
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+              fontWeight: DESIGN_SYSTEM.typography.weights.semibold,
+              color: DESIGN_SYSTEM.colors.primary[600]
+            }}>
+              {userProfile.name ? userProfile.name[0] : '👤'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                fontWeight: DESIGN_SYSTEM.typography.weights.semibold,
+                color: DESIGN_SYSTEM.colors.gray[900],
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {userProfile.name || '使用者'}
+              </div>
+              <div style={{
+                fontSize: DESIGN_SYSTEM.typography.sizes.xs,
+                color: DESIGN_SYSTEM.colors.gray[500],
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {userProfile.email}
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: `${DESIGN_SYSTEM.spacing.sm} ${DESIGN_SYSTEM.spacing.md}`,
+              border: `1px solid ${DESIGN_SYSTEM.colors.gray[300]}`,
+              borderRadius: DESIGN_SYSTEM.borderRadius.md,
+              backgroundColor: DESIGN_SYSTEM.colors.white,
+              color: DESIGN_SYSTEM.colors.gray[700],
+              fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+              fontWeight: DESIGN_SYSTEM.typography.weights.medium,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: DESIGN_SYSTEM.spacing.sm
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = DESIGN_SYSTEM.colors.gray[50];
+              e.target.style.borderColor = DESIGN_SYSTEM.colors.gray[400];
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = DESIGN_SYSTEM.colors.white;
+              e.target.style.borderColor = DESIGN_SYSTEM.colors.gray[300];
+            }}
+          >
+            <span>🔓</span>
+            <span>登出</span>
+          </button>
+        </div>
+      )}
 
       {/* 底部資訊 */}
       <div style={{
