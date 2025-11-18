@@ -414,60 +414,53 @@ const AiIdentificationView = () => {
         )}
 
         {/* 主要操作區域 */}
-        <div className="responsive-container" style={{
+        <div style={{
           ...COMMON_STYLES.container,
           paddingTop: showDevPanel ? 0 : DESIGN_SYSTEM.spacing.lg
         }}>
-          {/* 主要掃描按鈕 */}
-          <div className="grid-responsive-actions" style={{
-            marginBottom: DESIGN_SYSTEM.spacing.lg
+          {/* 功能統計卡片 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: DESIGN_SYSTEM.spacing.md,
+            marginBottom: DESIGN_SYSTEM.spacing.xl
           }}>
-            <button
-              onClick={() => setMode('camera')}
-              style={{
-                ...COMMON_STYLES.primaryButton,
-                padding: `${DESIGN_SYSTEM.spacing.lg} ${DESIGN_SYSTEM.spacing.md}`,
-                fontSize: DESIGN_SYSTEM.typography.sizes.base,
-                fontWeight: '600',
-                letterSpacing: '-0.025em',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.lg;
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.button;
-              }}
-            >
-              📷 拍照掃描
-            </button>
-            
-            <button
-              onClick={() => setMode('upload')}
-              style={{
-                ...COMMON_STYLES.secondaryButton,
-                padding: `${DESIGN_SYSTEM.spacing.lg} ${DESIGN_SYSTEM.spacing.md}`,
-                fontSize: DESIGN_SYSTEM.typography.sizes.base,
-                fontWeight: '500',
-                letterSpacing: '-0.025em'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.md;
-                e.target.style.borderColor = DESIGN_SYSTEM.colors.primary[300];
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.sm;
-                e.target.style.borderColor = DESIGN_SYSTEM.colors.gray[200];
-              }}
-            >
-              🖼️ 上傳圖片
-            </button>
+            <StatusCard
+              status="success"
+              icon="🎯"
+              title="AI 識別"
+              value="95%"
+              unit="準確率"
+            />
+            <StatusCard
+              status="info"
+              icon="⚡"
+              title="識別速度"
+              value="2"
+              unit="秒內"
+            />
           </div>
+
+          {/* 主要掃描按鈕 */}
+          <button
+            onClick={() => setMode('camera')}
+            style={{
+              ...COMMON_STYLES.primaryButton,
+              width: '100%',
+              padding: `${DESIGN_SYSTEM.spacing.xl} ${DESIGN_SYSTEM.spacing.lg}`,
+              fontSize: DESIGN_SYSTEM.typography.sizes.lg,
+              marginBottom: DESIGN_SYSTEM.spacing.lg,
+              background: `linear-gradient(135deg, ${DESIGN_SYSTEM.colors.primary[500]} 0%, ${DESIGN_SYSTEM.colors.primary[600]} 100%)`,
+              boxShadow: DESIGN_SYSTEM.shadows.lg,
+              transform: 'translateY(0)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseDown={(e) => e.target.style.transform = 'translateY(2px)'}
+            onMouseUp={(e) => e.target.style.transform = 'translateY(0)'}
+            onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+          >
+            📷 開始掃描識別
+          </button>
 
           {/* 功能卡片 */}
           <div style={{
@@ -500,233 +493,23 @@ const AiIdentificationView = () => {
     );
   }
 
-  // 相機掃描模式 - 真正全屏，隱藏底部導航
+  // 全屏掃描模式
   if (mode === 'camera') {
     return (
-      <>
-        {/* 隱藏底部導航 */}
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            .bottom-navigation { display: none !important; }
-            body { overflow: hidden !important; }
-          `
-        }} />
-        
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#000',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          {/* 返回按鈕 */}
-          <div style={{
-            position: 'absolute',
-            top: 'max(env(safe-area-inset-top), 20px)',
-            left: '20px',
-            zIndex: 10000
-          }}>
-            <button
-              onClick={() => setMode('home')}
-              style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '44px',
-                height: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: '18px',
-                color: 'white'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* 標題 */}
-          <div style={{
-            position: 'absolute',
-            top: 'max(env(safe-area-inset-top), 20px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 10000,
-            color: 'white',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>AI 智慧識別</h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.8 }}>對準食品包裝進行掃描</p>
-          </div>
-
-          {/* 相機組件 - 完整尺寸 */}
-          <Camera
-            onCapture={handleCapture}
-            onError={(error) => {
-              alert(error);
-              setMode('home');
-            }}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }}
-          />
-        </div>
-      </>
-    );
-  }
-
-  // 圖片上傳模式 - 高質感設計
-  if (mode === 'upload') {
-    return (
-      <div style={COMMON_STYLES.pageContainer}>
-        <HeaderBar 
-          title="📸 上傳圖片"
-          subtitle="從相簿選擇食品圖片進行識別"
-          showBackButton={true}
-          onBack={() => setMode('home')}
+      <FullScreenScanner
+        title="AI 智慧識別"
+        subtitle="對準食品包裝進行掃描"
+        onClose={() => setMode('home')}
+      >
+        <Camera
+          onCapture={handleCapture}
+          onError={(error) => {
+            alert(error);
+            setMode('home');
+          }}
+          style={{ width: '100%', height: '100%' }}
         />
-
-        <div style={{
-          ...COMMON_STYLES.container,
-          paddingTop: DESIGN_SYSTEM.spacing.lg,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 'calc(100vh - 120px)',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          {/* 上傳區域 */}
-          <div style={{
-            width: '100%',
-            maxWidth: '400px',
-            padding: DESIGN_SYSTEM.spacing.xl,
-            border: `2px dashed ${DESIGN_SYSTEM.colors.primary[300]}`,
-            borderRadius: DESIGN_SYSTEM.borderRadius.xl,
-            textAlign: 'center',
-            backgroundColor: DESIGN_SYSTEM.colors.primary[50],
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                  const base64 = event.target.result.split(',')[1];
-                  setCapturedImage({ 
-                    base64,
-                    file: file,
-                    timestamp: new Date().toISOString()
-                  });
-                  setMode('results');
-                  await performUnifiedRecognition(base64);
-                };
-                reader.readAsDataURL(file);
-              }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer'
-              }}
-            />
-            
-            {/* 上傳圖示 */}
-            <div style={{
-              fontSize: '64px',
-              marginBottom: DESIGN_SYSTEM.spacing.md,
-              color: DESIGN_SYSTEM.colors.primary[400]
-            }}>
-              📁
-            </div>
-            
-            {/* 上傳文字 */}
-            <h3 style={{
-              margin: 0,
-              marginBottom: DESIGN_SYSTEM.spacing.sm,
-              color: DESIGN_SYSTEM.colors.primary[700],
-              fontSize: DESIGN_SYSTEM.typography.sizes.lg,
-              fontWeight: DESIGN_SYSTEM.typography.weights.semibold
-            }}>
-              選擇圖片上傳
-            </h3>
-            
-            <p style={{
-              margin: 0,
-              color: DESIGN_SYSTEM.colors.gray[600],
-              fontSize: DESIGN_SYSTEM.typography.sizes.sm,
-              lineHeight: '1.5'
-            }}>
-              支援 JPG、PNG 格式<br />
-              建議圖片清晰，包含完整包裝
-            </p>
-          </div>
-
-          {/* 或者分隔線 */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            maxWidth: '400px',
-            margin: `${DESIGN_SYSTEM.spacing.lg} 0`
-          }}>
-            <div style={{
-              flex: 1,
-              height: '1px',
-              backgroundColor: DESIGN_SYSTEM.colors.gray[200]
-            }} />
-            <span style={{
-              padding: `0 ${DESIGN_SYSTEM.spacing.md}`,
-              color: DESIGN_SYSTEM.colors.gray[500],
-              fontSize: DESIGN_SYSTEM.typography.sizes.sm
-            }}>
-              或者
-            </span>
-            <div style={{
-              flex: 1,
-              height: '1px',
-              backgroundColor: DESIGN_SYSTEM.colors.gray[200]
-            }} />
-          </div>
-
-          {/* 返回拍照按鈕 */}
-          <button
-            onClick={() => setMode('camera')}
-            style={{
-              ...COMMON_STYLES.secondaryButton,
-              width: '100%',
-              maxWidth: '400px',
-              padding: DESIGN_SYSTEM.spacing.lg
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = DESIGN_SYSTEM.shadows.md;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = DESIGN_SYSTEM.shadows.sm;
-            }}
-          >
-            📷 改用拍照掃描
-          </button>
-        </div>
-      </div>
+      </FullScreenScanner>
     );
   }
 

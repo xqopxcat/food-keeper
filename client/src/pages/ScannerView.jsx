@@ -3,6 +3,9 @@ import BarcodeScanner from '../components/BarcodeScanner.jsx';
 import FoodSelector from '../components/FoodSelector.jsx';
 import InventoryForm from '../components/InventoryForm.jsx';
 import StorageContextForm from '../components/StorageContextForm.jsx';
+import HeaderBar from '../components/HeaderBar.jsx';
+import Card, { StatusCard, ActionCard } from '../components/Card.jsx';
+import { DESIGN_SYSTEM, COMMON_STYLES } from '../styles/designSystem.js';
 import {
   useLazyLookupByBarcodeQuery,
   useEstimateShelfLifeMutation,
@@ -120,58 +123,238 @@ const ScannerView = () => {
   const loading = lookupLoading;
 
   return (
-    <div>
-      <div style={{ padding: 16 }}>
-        <div style={{ marginBottom: 16 }}>
-          <h2 style={{ margin: '0 0 8px 0' }}>掃描或添加食材</h2>
-          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
-            使用條碼掃描或手動輸入來識別食材，系統會自動推算最佳保存期限
+    <div style={COMMON_STYLES.pageContainer}>
+      <HeaderBar 
+        title="📱 條碼掃描"
+        subtitle="掃描條碼快速識別食材"
+      />
+
+      <div className="responsive-container" style={COMMON_STYLES.container}>
+        {/* 推播控制卡片 */}
+        <Card 
+          title="🔔 推播通知設定" 
+          style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}
+        >
+          <p style={{
+            margin: `0 0 ${DESIGN_SYSTEM.spacing.md} 0`,
+            color: DESIGN_SYSTEM.colors.gray[600],
+            fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+            lineHeight: '1.5'
+          }}>
+            啟用推播通知以接收食材到期提醒
           </p>
-        </div>
-      </div>
-
-      {/* 推播控制 */}
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom: 16 }}>
-        <button onClick={enablePush}>啟用推播</button>
-        <button onClick={handleSendTestPush} disabled={!pushOK}>發送測試推播</button>
-      </div>
-
-      {/* 相機掃碼區 */}
-      {!barcode && (
-        <div style={{ marginTop:16 }}>
-          <BarcodeScanner onDetected={handleDetected} />
-        </div>
-      )}
-
-      {/* 查詢結果 */}
-      {barcode && (
-        <div style={{ marginTop:16 }}>
-          <div>掃描/查詢到的條碼：<b>{barcode}</b></div>
           
-          {loading && (
-            <div style={{ marginTop:8 }}>查詢商品資料中…</div>
-          )}
-          
-          {error && (
-            <div style={{ marginTop:8, color:'crimson' }}>查詢失敗：{error}</div>
-          )}
-          
-          {result && (
-            <div style={{ marginTop:12, padding:12, border:'1px solid #ddd', borderRadius:8 }}>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                {result.product?.image_url && (
-                  <img 
-                    src={result.product.image_url} 
-                    alt={result.product.name}
-                    style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6 }}
-                    onError={(e) => e.target.style.display = 'none'}
-                  />
-                )}
-                <div style={{ flex: 1 }}>
-                  <div><b>來源：</b>
-                    <span style={{ 
-                      color: result.source === 'local' ? '#059669' : '#0ea5e9',
-                      marginLeft: 4 
+          <div className="grid-responsive-actions">
+            <button 
+              onClick={enablePush}
+              style={{
+                ...COMMON_STYLES.primaryButton,
+                justifyContent: 'center'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.lg;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.button;
+              }}
+            >
+              🔔 啟用推播通知
+            </button>
+            
+            <button 
+              onClick={handleSendTestPush} 
+              disabled={!pushOK}
+              style={{
+                ...COMMON_STYLES.secondaryButton,
+                justifyContent: 'center',
+                opacity: pushOK ? 1 : 0.5,
+                cursor: pushOK ? 'pointer' : 'not-allowed'
+              }}
+              onMouseEnter={(e) => {
+                if (pushOK) {
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = DESIGN_SYSTEM.shadows.md;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.sm;
+              }}
+            >
+              📤 發送測試推播
+            </button>
+          </div>
+        </Card>
+
+        {/* 掃描區域 */}
+        {!barcode && (
+          <Card 
+            title="📷 條碼掃描器" 
+            style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}
+          >
+            <div style={{
+              textAlign: 'center',
+              marginBottom: DESIGN_SYSTEM.spacing.md
+            }}>
+              <p style={{
+                margin: 0,
+                color: DESIGN_SYSTEM.colors.gray[600],
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                lineHeight: '1.5'
+              }}>
+                將條碼對準掃描區域，系統會自動識別商品資訊
+              </p>
+            </div>
+            
+            <div style={{ 
+              padding: DESIGN_SYSTEM.spacing.lg,
+              backgroundColor: DESIGN_SYSTEM.colors.gray[50],
+              borderRadius: DESIGN_SYSTEM.borderRadius.xl,
+              border: `2px dashed ${DESIGN_SYSTEM.colors.gray[300]}`,
+              minHeight: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <BarcodeScanner onDetected={handleDetected} />
+            </div>
+          </Card>
+        )}
+
+        {/* 掃描結果 */}
+        {barcode && (
+          <Card 
+            title={`🏷️ 掃描結果`}
+            style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}
+          >
+            {/* 條碼資訊 */}
+            <div style={{
+              padding: DESIGN_SYSTEM.spacing.md,
+              backgroundColor: DESIGN_SYSTEM.colors.primary[50],
+              borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+              marginBottom: DESIGN_SYSTEM.spacing.md,
+              border: `1px solid ${DESIGN_SYSTEM.colors.primary[200]}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: DESIGN_SYSTEM.spacing.sm,
+                marginBottom: DESIGN_SYSTEM.spacing.xs
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: DESIGN_SYSTEM.colors.success
+                }} />
+                <span style={{
+                  fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                  color: DESIGN_SYSTEM.colors.primary[700],
+                  fontWeight: '500'
+                }}>
+                  掃描成功
+                </span>
+              </div>
+              <div style={{
+                fontSize: DESIGN_SYSTEM.typography.sizes.lg,
+                fontWeight: '600',
+                color: DESIGN_SYSTEM.colors.primary[800],
+                fontFamily: 'monospace'
+              }}>
+                {barcode}
+              </div>
+            </div>
+
+            {loading && (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: DESIGN_SYSTEM.spacing.xl,
+                color: DESIGN_SYSTEM.colors.gray[600]
+              }}>
+                <div style={{ 
+                  fontSize: '32px', 
+                  marginBottom: DESIGN_SYSTEM.spacing.md,
+                  animation: 'spin 2s linear infinite'
+                }}>
+                  🔄
+                </div>
+                <div style={{
+                  fontSize: DESIGN_SYSTEM.typography.sizes.base,
+                  fontWeight: '500'
+                }}>
+                  正在查詢商品資料...
+                </div>
+                <div style={{
+                  fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                  color: DESIGN_SYSTEM.colors.gray[500],
+                  marginTop: DESIGN_SYSTEM.spacing.xs
+                }}>
+                  請稍候，正在從多個數據源查詢
+                </div>
+              </div>
+            )}
+            
+            {error && (
+              <div style={{ 
+                padding: DESIGN_SYSTEM.spacing.md,
+                backgroundColor: DESIGN_SYSTEM.colors.error + '10',
+                border: `1px solid ${DESIGN_SYSTEM.colors.error}30`,
+                borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+                color: DESIGN_SYSTEM.colors.error,
+                marginBottom: DESIGN_SYSTEM.spacing.md
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: DESIGN_SYSTEM.spacing.sm,
+                  marginBottom: DESIGN_SYSTEM.spacing.xs
+                }}>
+                  <span style={{ fontSize: '20px' }}>⚠️</span>
+                  <span style={{ fontWeight: '600' }}>查詢失敗</span>
+                </div>
+                <div style={{ fontSize: DESIGN_SYSTEM.typography.sizes.sm }}>
+                  {error}
+                </div>
+              </div>
+            )}
+            
+            {result && (
+              <div>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: DESIGN_SYSTEM.spacing.lg, 
+                  alignItems: 'flex-start',
+                  marginBottom: DESIGN_SYSTEM.spacing.lg
+                }}>
+                  {result.product?.image_url && (
+                    <img 
+                      src={result.product.image_url} 
+                      alt={result.product.name}
+                      style={{ 
+                        width: 120, 
+                        height: 120, 
+                        objectFit: 'cover', 
+                        borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+                        border: `2px solid ${DESIGN_SYSTEM.colors.gray[200]}`,
+                        flexShrink: 0
+                      }}
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  )}
+                  
+                  <div style={{ flex: 1 }}>
+                    {/* 數據源標識 */}
+                    <div style={{
+                      display: 'inline-block',
+                      padding: `${DESIGN_SYSTEM.spacing.xs} ${DESIGN_SYSTEM.spacing.sm}`,
+                      backgroundColor: result.source === 'local' ? DESIGN_SYSTEM.colors.success + '20' : DESIGN_SYSTEM.colors.info + '20',
+                      color: result.source === 'local' ? DESIGN_SYSTEM.colors.success : DESIGN_SYSTEM.colors.info,
+                      borderRadius: DESIGN_SYSTEM.borderRadius.full,
+                      fontSize: DESIGN_SYSTEM.typography.sizes.xs,
+                      fontWeight: '600',
+                      marginBottom: DESIGN_SYSTEM.spacing.sm
                     }}>
                       {result.source === 'local' ? '本地資料庫' : 
                        result.source === 'openfoodfacts' ? 'Open Food Facts' :
@@ -179,124 +362,245 @@ const ScannerView = () => {
                        result.source === 'taiwan_local' ? '🇹🇼 台灣品牌' :
                        result.source === 'taiwan_generic' ? '🇹🇼 台灣製造' :
                        result.source === 'upcdatabase' ? 'UPC Database' : result.source}
-                    </span>
-                  </div>
-                  <div><b>品名：</b>{result.product?.name}</div>
-                  <div><b>品牌：</b>{result.product?.brand || '-'}</div>
-                  <div><b>數量：</b>{result.product?.quantity || '-'}</div>
-                  {result.product?.category && (
-                    <div><b>分類：</b>{result.product.category}</div>
-                  )}
-                </div>
-              </div>
-              <button 
-                style={{ marginTop:12 }} 
-                onClick={() => { 
-                  setBarcode(null); 
-                  setResult(null); 
-                  setError(null); 
-                }}
-              >
-                掃下一個
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+                    </div>
 
-      {/* 保存情境表單 - 簡化版本 */}
-      {barcode && (
-        <div style={{ marginTop:12 }}>
-          <h3>保存情境</h3>
-          
-          {/* 食材選擇器 */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(160px,1fr))', gap:8 }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
-                食材種類 (itemKey)
+                    {/* 產品名稱 */}
+                    <h3 style={{
+                      margin: `0 0 ${DESIGN_SYSTEM.spacing.sm} 0`,
+                      fontSize: DESIGN_SYSTEM.typography.sizes.lg,
+                      fontWeight: '700',
+                      color: DESIGN_SYSTEM.colors.gray[900],
+                      lineHeight: '1.3'
+                    }}>
+                      {result.product?.name || '未知產品'}
+                    </h3>
+                    
+                    {/* 產品詳細資訊 */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: DESIGN_SYSTEM.spacing.sm,
+                      marginBottom: DESIGN_SYSTEM.spacing.md
+                    }}>
+                      {result.product?.brand && (
+                        <div>
+                          <div style={{ 
+                            fontSize: DESIGN_SYSTEM.typography.sizes.xs,
+                            color: DESIGN_SYSTEM.colors.gray[500],
+                            marginBottom: '2px'
+                          }}>品牌</div>
+                          <div style={{
+                            fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                            fontWeight: '500',
+                            color: DESIGN_SYSTEM.colors.gray[700]
+                          }}>{result.product.brand}</div>
+                        </div>
+                      )}
+                      
+                      {result.product?.quantity && (
+                        <div>
+                          <div style={{ 
+                            fontSize: DESIGN_SYSTEM.typography.sizes.xs,
+                            color: DESIGN_SYSTEM.colors.gray[500],
+                            marginBottom: '2px'
+                          }}>規格</div>
+                          <div style={{
+                            fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                            fontWeight: '500',
+                            color: DESIGN_SYSTEM.colors.gray[700]
+                          }}>{result.product.quantity}</div>
+                        </div>
+                      )}
+                      
+                      {result.product?.category && (
+                        <div>
+                          <div style={{ 
+                            fontSize: DESIGN_SYSTEM.typography.sizes.xs,
+                            color: DESIGN_SYSTEM.colors.gray[500],
+                            marginBottom: '2px'
+                          }}>分類</div>
+                          <div style={{
+                            fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                            fontWeight: '500',
+                            color: DESIGN_SYSTEM.colors.gray[700]
+                          }}>{result.product.category}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => { 
+                    setBarcode(null); 
+                    setResult(null); 
+                    setError(null); 
+                  }}
+                  style={{
+                    ...COMMON_STYLES.secondaryButton,
+                    width: '100%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = DESIGN_SYSTEM.shadows.md;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = DESIGN_SYSTEM.shadows.sm;
+                  }}
+                >
+                  🔍 掃描下一個產品
+                </button>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* 保存情境表單 */}
+        {barcode && (
+          <Card title="📦 保存設定" style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}>
+            {/* 食材選擇器 */}
+            <div style={{ marginBottom: DESIGN_SYSTEM.spacing.md }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: DESIGN_SYSTEM.spacing.xs, 
+                fontWeight: '500',
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm
+              }}>
+                食材種類 (itemKey) *
               </label>
               <FoodSelector
                 value={facts.itemKey}
                 onChange={(value) => setFacts({ ...facts, itemKey: value })}
               />
             </div>
-          </div>
 
-          {/* 保存情境表單 */}
-          <div style={{ marginTop: 12 }}>
-            <StorageContextForm
-              facts={facts}
-              onFactsChange={setFacts}
-              style={{ padding: 0, border: 'none', backgroundColor: 'transparent' }}
-            />
-          </div>
+            {/* 保存情境表單 */}
+            <div style={{ marginBottom: DESIGN_SYSTEM.spacing.md }}>
+              <StorageContextForm
+                facts={facts}
+                onFactsChange={setFacts}
+                style={{ padding: 0, border: 'none', backgroundColor: 'transparent' }}
+              />
+            </div>
 
-          {/* 庫存管理表單 */}
-          <div style={{ marginTop: 16 }}>
-            <InventoryForm
-              inventoryData={inventoryData}
-              onInventoryDataChange={setInventoryData}
-            />
-          </div>
+            {/* 庫存管理表單 */}
+            <div style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}>
+              <InventoryForm
+                inventoryData={inventoryData}
+                onInventoryDataChange={setInventoryData}
+              />
+            </div>
 
-          <div style={{ display:'flex', gap:8, marginTop:10, flexWrap: 'wrap' }}>
-            <button 
-              onClick={() => handleEstimate(false)} 
-              disabled={!readyForEstimate || loading}
-            >
-              📊 估算保存期限
-            </button>
-            <button 
-              onClick={handleAddToInventory}
-              disabled={!facts.itemKey || loading}
-              style={{
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                cursor: (!facts.itemKey || loading) ? 'not-allowed' : 'pointer',
-                opacity: (!facts.itemKey || loading) ? 0.6 : 1
-              }}
-            >
-              📦 加入庫存
-            </button>
+            {/* 操作按鈕 */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: DESIGN_SYSTEM.spacing.sm,
+              marginBottom: DESIGN_SYSTEM.spacing.md
+            }}>
+              <button 
+                onClick={() => handleEstimate(false)} 
+                disabled={!readyForEstimate || loading}
+                style={{
+                  ...COMMON_STYLES.secondaryButton,
+                  opacity: (!readyForEstimate || loading) ? 0.5 : 1,
+                  cursor: (!readyForEstimate || loading) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                📊 估算期限
+              </button>
+              
+              <button 
+                onClick={handleAddToInventory}
+                disabled={!facts.itemKey || loading}
+                style={{
+                  ...COMMON_STYLES.primaryButton,
+                  opacity: (!facts.itemKey || loading) ? 0.5 : 1,
+                  cursor: (!facts.itemKey || loading) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                📦 加入庫存
+              </button>
+            </div>
 
             {!readyForEstimate && (
-              <div style={{ width: '100%', marginTop: 6, color: '#b45309', fontSize: '14px' }}>
-                💡 無法自動判斷食材類型，請手動選擇「食材種類」與「保存方式」後再操作。
+              <div style={{ 
+                padding: DESIGN_SYSTEM.spacing.sm,
+                backgroundColor: DESIGN_SYSTEM.colors.warning + '20',
+                border: `1px solid ${DESIGN_SYSTEM.colors.warning}40`,
+                borderRadius: DESIGN_SYSTEM.borderRadius.md,
+                color: DESIGN_SYSTEM.colors.warning,
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                marginBottom: DESIGN_SYSTEM.spacing.md
+              }}>
+                💡 請選擇「食材種類」與「保存方式」後再操作
               </div>
             )}
-          </div>
 
-          {!readyForEstimate && (
-            <div style={{ marginTop: 6, color: '#b45309', fontSize: '14px' }}>
-              💡 請選擇「食材種類」與「保存方式」後再操作。
-            </div>
-          )}
-
-          {estimate && (
-            <div style={{ marginTop:10, padding:10, border:'1px dashed #aaa', borderRadius:8 }}>
-              <div><b>估算天數：</b>{estimate.daysMin}–{estimate.daysMax} 天（信心 {Math.round(estimate.confidence*100)}%）</div>
-              <div><b>建議：</b>{estimate.tips || '—'}</div>
-              {estimate.baseDateISO && (
-                <div style={{ color: estimate.usingPurchaseDate ? '#059669' : '#6b7280' }}>
-                  <b>計算基準：</b>
-                  {new Date(estimate.baseDateISO).toLocaleDateString()} 
-                  {estimate.usingPurchaseDate ? ' (購買日期)' : ' (當前日期)'}
+            {/* 估算結果 */}
+            {estimate && (
+              <Card 
+                backgroundColor={DESIGN_SYSTEM.colors.success + '20'}
+                borderColor={DESIGN_SYSTEM.colors.success + '40'}
+                style={{ marginTop: DESIGN_SYSTEM.spacing.md }}
+              >
+                <div style={{ fontSize: DESIGN_SYSTEM.typography.sizes.sm }}>
+                  <div style={{ marginBottom: DESIGN_SYSTEM.spacing.xs }}>
+                    <strong>📅 估算天數：</strong>{estimate.daysMin}–{estimate.daysMax} 天
+                    <span style={{ 
+                      marginLeft: DESIGN_SYSTEM.spacing.xs, 
+                      color: DESIGN_SYSTEM.colors.gray[600] 
+                    }}>
+                      (信心 {Math.round(estimate.confidence*100)}%)
+                    </span>
+                  </div>
+                  
+                  <div style={{ marginBottom: DESIGN_SYSTEM.spacing.xs }}>
+                    <strong>💡 建議：</strong>{estimate.tips || '—'}
+                  </div>
+                  
+                  {estimate.baseDateISO && (
+                    <div style={{ 
+                      color: estimate.usingPurchaseDate ? DESIGN_SYSTEM.colors.success : DESIGN_SYSTEM.colors.gray[600],
+                      marginBottom: DESIGN_SYSTEM.spacing.xs
+                    }}>
+                      <strong>📍 計算基準：</strong>
+                      {new Date(estimate.baseDateISO).toLocaleDateString()} 
+                      {estimate.usingPurchaseDate ? ' (購買日期)' : ' (當前日期)'}
+                    </div>
+                  )}
+                  
+                  {estimate.expiresMinAtISO && (
+                    <div style={{ marginBottom: DESIGN_SYSTEM.spacing.xs }}>
+                      <strong>⏰ 最短保存期：</strong>{new Date(estimate.expiresMinAtISO).toLocaleDateString()}
+                    </div>
+                  )}
+                  
+                  {estimate.expiresMaxAtISO && (
+                    <div style={{ marginBottom: DESIGN_SYSTEM.spacing.xs }}>
+                      <strong>⏰ 最長保存期：</strong>{new Date(estimate.expiresMaxAtISO).toLocaleDateString()}
+                    </div>
+                  )}
+                  
+                  {estimate.saved && (
+                    <div style={{ 
+                      color: DESIGN_SYSTEM.colors.success, 
+                      fontWeight: 'bold',
+                      padding: DESIGN_SYSTEM.spacing.sm,
+                      backgroundColor: DESIGN_SYSTEM.colors.success + '20',
+                      borderRadius: DESIGN_SYSTEM.borderRadius.sm,
+                      marginTop: DESIGN_SYSTEM.spacing.sm
+                    }}>
+                      ✅ 已成功加入庫存
+                    </div>
+                  )}
                 </div>
-              )}
-              {estimate.expiresMinAtISO && <div><b>最短保存期：</b>{new Date(estimate.expiresMinAtISO).toLocaleDateString()}</div>}
-              {estimate.expiresMaxAtISO && <div><b>最長保存期：</b>{new Date(estimate.expiresMaxAtISO).toLocaleDateString()}</div>}
-              {estimate.saved && (
-                <div style={{ color: '#059669', fontWeight: 'bold' }}>
-                  ✅ 已成功加入庫存
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+              </Card>
+            )}
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

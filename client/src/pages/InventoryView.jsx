@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import InventoryItem from '../components/InventoryItem.jsx';
+import HeaderBar from '../components/HeaderBar.jsx';
+import Card, { StatusCard, ActionCard } from '../components/Card.jsx';
+import { DESIGN_SYSTEM, COMMON_STYLES } from '../styles/designSystem.js';
 import { 
   useGetInventoryQuery,
   useGetExpiringItemsQuery,
@@ -115,126 +118,274 @@ const InventoryView = () => {
   const stats = statsData?.stats || {};
 
   return (
-    <div style={{ padding: 20, fontFamily: 'ui-sans-serif, system-ui' }}>
-      <h2>📦 我的食材庫存</h2>
+    <div style={COMMON_STYLES.pageContainer}>
+      <HeaderBar 
+        title="📦 我的庫存"
+        subtitle={`${inventory.length} 項食材`}
+      />
 
-      {/* 統計卡片 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
-        <div style={{ padding: 16, backgroundColor: '#f0f9ff', borderRadius: 8, border: '1px solid #e0f2fe' }}>
-          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#0369a1' }}>{stats.total || 0}</div>
-          <div style={{ color: '#0284c7', fontSize: 14 }}>總項目</div>
-        </div>
-        
-        <div style={{ padding: 16, backgroundColor: '#f0fdf4', borderRadius: 8, border: '1px solid #dcfce7' }}>
-          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#16a34a' }}>{stats.available || 0}</div>
-          <div style={{ color: '#15803d', fontSize: 14 }}>可用庫存</div>
-        </div>
-        
-        <div style={{ padding: 16, backgroundColor: '#fef3c7', borderRadius: 8, border: '1px solid #fde68a' }}>
-          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#d97706' }}>{stats.warning || 0}</div>
-          <div style={{ color: '#b45309', fontSize: 14 }}>即將到期</div>
-        </div>
-        
-        <div style={{ padding: 16, backgroundColor: '#fee2e2', borderRadius: 8, border: '1px solid #fecaca' }}>
-          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#dc2626' }}>{stats.expired || 0}</div>
-          <div style={{ color: '#b91c1c', fontSize: 14 }}>已過期</div>
-        </div>
-        
-        <div style={{ padding: 16, backgroundColor: '#f3f4f6', borderRadius: 8, border: '1px solid #d1d5db' }}>
-          <div style={{ fontSize: 20, fontWeight: 'bold', color: '#10b981' }}>{stats.consumed || 0}</div>
-          <div style={{ color: '#059669', fontSize: 14 }}>已消耗</div>
-        </div>
-      </div>
-
-      {/* 即將到期提醒 */}
-      {expiringItems.length > 0 && (
-        <div style={{ 
-          padding: 16, 
-          backgroundColor: '#fef3c7', 
-          borderRadius: 8, 
-          border: '1px solid #fde68a',
-          marginBottom: 16
+      <div className="responsive-container" style={COMMON_STYLES.container}>
+        {/* 統計卡片區域 */}
+        <div className="grid-responsive-stats" style={{
+          marginBottom: DESIGN_SYSTEM.spacing.xl
         }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#92400e' }}>⚠️ 即將到期提醒</h3>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {expiringItems.slice(0, 3).map((item, index) => (
-              <div key={item._id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{item.name} ({item.quantity?.amount || 1} {item.quantity?.unit || '個'})</span>
-                <span style={{ color: urgencyConfig[item.urgency]?.color || '#666' }}>
-                  {formatDate(item.expiresMaxAt)}
-                </span>
-              </div>
-            ))}
-          </div>
+          <StatusCard
+            status="info"
+            icon="📊"
+            title="總項目"
+            value={stats.total || 0}
+            unit=""
+          />
+          
+          <StatusCard
+            status="success"
+            icon="✅"
+            title="可用"
+            value={stats.available || 0}
+            unit=""
+          />
+          
+          <StatusCard
+            status="warning"
+            icon="⚠️"
+            title="即將到期"
+            value={stats.warning || 0}
+            unit=""
+          />
+          
+          <StatusCard
+            status="error"
+            icon="❌"
+            title="已過期"
+            value={stats.expired || 0}
+            unit=""
+          />
         </div>
-      )}
 
-      {/* 篩選和排序控制 */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div>
-          <label style={{ marginRight: 8 }}>篩選:</label>
-          <select value={filter} onChange={e => setFilter(e.target.value)}>
-            <option value="all">全部</option>
-            <option value="available">可用庫存</option>
-            <option value="fresh">新鮮</option>
-            <option value="warning">即將到期</option>
-            <option value="expired">已過期</option>
-            <option value="consumed">已消耗</option>
-          </select>
-        </div>
-        
-        <div>
-          <label style={{ marginRight: 8 }}>排序:</label>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
-            <option value="expiresMaxAt">到期日</option>
-            <option value="acquiredAt">加入時間</option>
-            <option value="name">名稱</option>
-          </select>
-        </div>
-        
-        {selectedItems.size > 0 && (
-          <button 
-            onClick={handleBatchConsume}
-            style={{ 
-              backgroundColor: '#10b981', 
-              color: 'white', 
-              border: 'none', 
-              padding: '8px 16px', 
-              borderRadius: '4px' 
+        {/* 即將到期提醒 */}
+        {expiringItems.length > 0 && (
+          <Card 
+            title="⚠️ 即將到期提醒"
+            style={{
+              marginBottom: DESIGN_SYSTEM.spacing.lg,
+              backgroundColor: DESIGN_SYSTEM.colors.warning + '10',
+              borderColor: DESIGN_SYSTEM.colors.warning + '30'
             }}
           >
-            標記已消耗 ({selectedItems.size})
-          </button>
+            <div style={{ display: 'grid', gap: DESIGN_SYSTEM.spacing.sm }}>
+              {expiringItems.slice(0, 3).map((item, index) => (
+                <div key={item._id || index} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: DESIGN_SYSTEM.spacing.md,
+                  backgroundColor: DESIGN_SYSTEM.colors.white,
+                  borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+                  border: `1px solid ${DESIGN_SYSTEM.colors.warning}20`,
+                  fontSize: DESIGN_SYSTEM.typography.sizes.sm
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: DESIGN_SYSTEM.spacing.sm }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: urgencyConfig[item.urgency]?.color || DESIGN_SYSTEM.colors.warning
+                    }} />
+                    <span style={{ fontWeight: '500' }}>
+                      {item.name} ({item.quantity?.amount || 1} {item.quantity?.unit || '個'})
+                    </span>
+                  </div>
+                  <span style={{
+                    color: urgencyConfig[item.urgency]?.color || DESIGN_SYSTEM.colors.gray[600],
+                    fontWeight: '600',
+                    fontSize: DESIGN_SYSTEM.typography.sizes.xs
+                  }}>
+                    {formatDate(item.expiresMaxAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
         )}
-      </div>
 
-      {/* 庫存清單 */}
-      <div style={{ display: 'grid', gap: 12 }}>
-        {inventory.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: 40, 
-            color: '#6b7280',
-            border: '2px dashed #d1d5db',
-            borderRadius: 8 
+        {/* 篩選控制區 */}
+        <Card 
+          title="🔍 篩選與排序"
+          style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}
+        >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: DESIGN_SYSTEM.spacing.md,
+            marginBottom: DESIGN_SYSTEM.spacing.md
           }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
-            <div>目前沒有庫存項目</div>
-            <div style={{ fontSize: 14, marginTop: 8 }}>掃描或手動添加食材來建立你的庫存</div>
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: DESIGN_SYSTEM.spacing.xs,
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                fontWeight: '500',
+                color: DESIGN_SYSTEM.colors.gray[700]
+              }}>
+                篩選狀態
+              </label>
+              <select
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: DESIGN_SYSTEM.spacing.sm,
+                  border: `1px solid ${DESIGN_SYSTEM.colors.gray[300]}`,
+                  borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+                  fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                  backgroundColor: DESIGN_SYSTEM.colors.white,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">全部項目</option>
+                <option value="available">可用庫存</option>
+                <option value="fresh">新鮮狀態</option>
+                <option value="warning">即將到期</option>
+                <option value="expired">已過期</option>
+                <option value="consumed">已消耗</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: DESIGN_SYSTEM.spacing.xs,
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                fontWeight: '500',
+                color: DESIGN_SYSTEM.colors.gray[700]
+              }}>
+                排序方式
+              </label>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: DESIGN_SYSTEM.spacing.sm,
+                  border: `1px solid ${DESIGN_SYSTEM.colors.gray[300]}`,
+                  borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+                  fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                  backgroundColor: DESIGN_SYSTEM.colors.white,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="expiresMaxAt">到期日期</option>
+                <option value="acquiredAt">加入時間</option>
+                <option value="name">名稱排序</option>
+              </select>
+            </div>
           </div>
-        ) : (
-          inventory.map(item => (
-            <InventoryItem
-              key={item._id}
-              item={item}
-              isSelected={selectedItems.has(item._id)}
-              onSelect={() => toggleItemSelection(item._id)}
-              onStatusUpdate={handleStatusUpdate}
-              onDelete={handleDeleteItem}
-              showCheckbox={true}
-            />
-          ))
-        )}
+
+          {selectedItems.size > 0 && (
+            <button
+              onClick={handleBatchConsume}
+              style={{
+                ...COMMON_STYLES.primaryButton,
+                width: '100%'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.lg;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.button;
+              }}
+            >
+              ✅ 標記已消耗 ({selectedItems.size} 項)
+            </button>
+          )}
+        </Card>
+
+        {/* 庫存清單 */}
+        <Card 
+          title={`📋 庫存清單 ${inventory.length > 0 ? `(${inventory.length})` : ''}`}
+        >
+          {inventory.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: `${DESIGN_SYSTEM.spacing.xl} ${DESIGN_SYSTEM.spacing.lg}`,
+              color: DESIGN_SYSTEM.colors.gray[500]
+            }}>
+              <div style={{
+                fontSize: '64px',
+                marginBottom: DESIGN_SYSTEM.spacing.lg,
+                opacity: 0.6
+              }}>
+                📭
+              </div>
+              <div style={{
+                fontSize: DESIGN_SYSTEM.typography.sizes.lg,
+                fontWeight: '600',
+                marginBottom: DESIGN_SYSTEM.spacing.sm,
+                color: DESIGN_SYSTEM.colors.gray[600]
+              }}>
+                目前沒有庫存項目
+              </div>
+              <div style={{
+                fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+                lineHeight: '1.5',
+                marginBottom: DESIGN_SYSTEM.spacing.lg
+              }}>
+                掃描條碼或使用 AI 識別來建立你的食材庫存
+              </div>
+              <div style={{
+                display: 'flex',
+                gap: DESIGN_SYSTEM.spacing.sm,
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
+                <button
+                  onClick={() => window.location.href = '/scanner'}
+                  style={{
+                    ...COMMON_STYLES.primaryButton,
+                    padding: `${DESIGN_SYSTEM.spacing.sm} ${DESIGN_SYSTEM.spacing.md}`
+                  }}
+                >
+                  📱 條碼掃描
+                </button>
+                <button
+                  onClick={() => window.location.href = '/ai-identification'}
+                  style={{
+                    ...COMMON_STYLES.secondaryButton,
+                    padding: `${DESIGN_SYSTEM.spacing.sm} ${DESIGN_SYSTEM.spacing.md}`
+                  }}
+                >
+                  🤖 AI 識別
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gap: DESIGN_SYSTEM.spacing.md
+            }}>
+              {inventory.map(item => (
+                <div key={item._id} style={{
+                  padding: DESIGN_SYSTEM.spacing.md,
+                  backgroundColor: DESIGN_SYSTEM.colors.gray[50],
+                  borderRadius: DESIGN_SYSTEM.borderRadius.lg,
+                  border: `1px solid ${DESIGN_SYSTEM.colors.gray[200]}`,
+                  transition: 'all 0.2s ease'
+                }}>
+                  <InventoryItem
+                    item={item}
+                    isSelected={selectedItems.has(item._id)}
+                    onSelect={() => toggleItemSelection(item._id)}
+                    onStatusUpdate={handleStatusUpdate}
+                    onDelete={handleDeleteItem}
+                    showCheckbox={true}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );
