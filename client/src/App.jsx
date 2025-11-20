@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 import BottomNavigation from './components/BottomNavigation';
 import DesktopSidebar from './components/DesktopSidebar';
 import ScannerView from './pages/ScannerView';
@@ -8,54 +10,6 @@ import AiIdentificationView from './pages/AiIdentificationView';
 import SettingsView from './pages/SettingsView';
 import LoginView from './pages/LoginView';
 import { DESIGN_SYSTEM, COMMON_STYLES, CSS_KEYFRAMES } from './styles/designSystem.js';
-
-// 受保護的路由組件
-const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-  
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    setIsAuthenticated(!!token);
-  }, []);
-  
-  // 載入中狀態
-  if (isAuthenticated === null) {
-    return (
-      <div style={{
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: DESIGN_SYSTEM.colors.gray[50]
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: DESIGN_SYSTEM.spacing.lg
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: `4px solid ${DESIGN_SYSTEM.colors.gray[200]}`,
-            borderTop: `4px solid ${DESIGN_SYSTEM.colors.primary[500]}`,
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <div style={{
-            fontSize: DESIGN_SYSTEM.typography.sizes.base,
-            color: DESIGN_SYSTEM.colors.gray[600]
-          }}>
-            載入中...
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
 
 // 主要應用組件
 const AppContent = () => {
@@ -95,7 +49,7 @@ const AppContent = () => {
           padding: 0 16px;
         }
         
-        @media (min-width: 768px) {
+        @media (minWidth: 768px) {
           .responsive-container {
             max-width: 768px;
             padding: 0 24px;
@@ -227,8 +181,10 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }

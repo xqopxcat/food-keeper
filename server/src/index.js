@@ -11,9 +11,30 @@ import offLookupRoute from './routes/offLookup.js';
 import inventoryRoute from './routes/inventory.js';
 import itemsRoute from './routes/items.js';
 import aiRoute from './routes/ai.js';
+import authRoute from './routes/auth.js';
+import session from 'express-session';
+import passport from './config/passport.js';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true // 允許攜帶 cookies
+}));
+
+// 設定 session 中介軟體
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // 僅在生產環境使用 HTTPS
+    maxAge: 24 * 60 * 60 * 1000 // 1 天
+  }
+}));
+
+// 初始化 Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // 增加 body parser 限制以支援大圖片上傳
 app.use(express.json({ 
@@ -39,6 +60,7 @@ mongoose.connect(MONGODB_URI)
   });
 
 app.get('/api/health', (_, res) => res.json({ ok: true }));
+app.use('/api/auth', authRoute);
 app.use('/api/lookup', lookupRoute);
 app.use('/api/push', pushRoute);
 app.use('/api/rules', rulesRoute);

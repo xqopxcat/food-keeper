@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { hybridFoodIdentification, hybridTextExtraction, getHybridAIStatus } from '../services/hybridAI.js';
+import { auth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -32,7 +33,7 @@ const upload = multer({
  * - imageBase64: base64 編碼的圖片
  * - options: 識別選項物件
  */
-router.post('/identify', upload.single('image'), async (req, res) => {
+router.post('/identify', auth, upload.single('image'), async (req, res) => {
   try {
     let imageBase64;
     let options = {};
@@ -99,7 +100,7 @@ router.post('/identify', upload.single('image'), async (req, res) => {
  * 
  * Body 格式同 /identify
  */
-router.post('/ocr', upload.single('image'), async (req, res) => {
+router.post('/ocr', auth, upload.single('image'), async (req, res) => {
   try {
     let imageBase64;
 

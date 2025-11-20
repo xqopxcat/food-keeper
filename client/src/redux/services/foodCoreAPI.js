@@ -2,6 +2,45 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const SERVER = import.meta.env.VITE_SERVER_ORIGIN || 'http://localhost:4000';
 
+// 全局登出函數引用
+let globalLogout = null;
+
+export const setRTKGlobalLogout = (logoutFn) => {
+  globalLogout = logoutFn;
+};
+
+// 創建自定義 baseQuery 來處理認證錯誤
+const baseQueryWithAuth = fetchBaseQuery({
+  baseUrl: `${SERVER}/api`,
+  prepareHeaders: (headers, { getState, endpoint }) => {
+    // 獲取 token
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    
+    // 對於檔案上傳的端點，不設置 Content-Type，讓瀏覽器自動設置
+    const formDataEndpoints = ['identifyFoodItemsFile', 'extractTextFromImageFile', 'batchIdentifyFoodItems'];
+    if (!formDataEndpoints.includes(endpoint)) {
+      headers.set('Content-Type', 'application/json');
+    }
+    return headers;
+  },
+});
+
+const baseQueryWithLogout = async (args, api, extraOptions) => {
+  let result = await baseQueryWithAuth(args, api, extraOptions);
+  
+  if (result.error && result.error.status === 401) {
+    console.log('收到 401 未授權響應，執行自動登出');
+    if (globalLogout) {
+      globalLogout();
+    }
+  }
+  
+  return result;
+};
+
 // 輔助函數
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -14,17 +53,7 @@ function urlBase64ToUint8Array(base64String) {
 
 export const foodCoreAPI = createApi({
   reducerPath: 'foodCoreAPI',
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${SERVER}/api`,
-    prepareHeaders: (headers, { endpoint }) => {
-      // 對於檔案上傳的端點，不設置 Content-Type，讓瀏覽器自動設置
-      const formDataEndpoints = ['identifyFoodItemsFile', 'extractTextFromImageFile', 'batchIdentifyFoodItems'];
-      if (!formDataEndpoints.includes(endpoint)) {
-        headers.set('Content-Type', 'application/json');
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithLogout,
   tagTypes: ['Item', 'Stats', 'ExpiringItems'],
   endpoints: (builder) => ({
     // 條碼查詢

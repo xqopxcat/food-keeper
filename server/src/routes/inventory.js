@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import Item from '../models/Item.js';
 import { evaluateShelfLife } from '../services/shelfLife.js';
+import { auth } from '../middleware/auth.js';
 
 const router = Router();
 
 // 新增食材到庫存
-router.post('/add', async (req, res) => {
+router.post('/add', auth, async (req, res) => {
   try {
     const {
-      userId = '', // 暫時使用''之後可以改成真實的用戶認證
       itemKey,
       name,
       brand,
@@ -22,6 +22,9 @@ router.post('/add', async (req, res) => {
       source = 'manual',
       notes,
     } = req.body;
+
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
 
     // 驗證必要欄位
     if (!itemKey || !name) {
@@ -123,14 +126,16 @@ router.post('/add', async (req, res) => {
 });
 
 // 取得用戶所有庫存
-router.get('/list', async (req, res) => {
+router.get('/list', auth, async (req, res) => {
   try {
     const { 
-      userId = '',
       status,
       sortBy = 'expiryDate',
       order = 'asc'
     } = req.query;
+
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
 
     const filter = { userId };
     if (status) {
@@ -176,12 +181,14 @@ router.get('/list', async (req, res) => {
 });
 
 // 取得即將到期的食材
-router.get('/expiring', async (req, res) => {
+router.get('/expiring', auth, async (req, res) => {
   try {
     const { 
-      userId = '',
       days = 3 
     } = req.query;
+
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
 
     const items = await Item.getExpiringItems(userId, parseInt(days));
     
@@ -201,9 +208,10 @@ router.get('/expiring', async (req, res) => {
 });
 
 // 取得庫存統計
-router.get('/stats', async (req, res) => {
+router.get('/stats', auth, async (req, res) => {
   try {
-    const { userId = '' } = req.query;
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
     
     const stats = await Item.getInventoryStats(userId);
     
@@ -244,10 +252,13 @@ router.get('/stats', async (req, res) => {
 });
 
 // 更新食材狀態
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId = '', ...updateData } = req.body;
+    const { ...updateData } = req.body;
+    
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
 
     // 檢查權限
     const item = await Item.findOne({ _id: id, userId });
@@ -283,10 +294,12 @@ router.put('/:id', async (req, res) => {
 });
 
 // 刪除食材
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId = '' } = req.query;
+    
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
 
     const result = await Item.findOneAndDelete({ _id: id, userId });
     if (!result) {
@@ -310,13 +323,15 @@ router.delete('/:id', async (req, res) => {
 });
 
 // 批量操作：消耗多個食材
-router.post('/consume', async (req, res) => {
+router.post('/consume', auth, async (req, res) => {
   try {
     const { 
-      userId = '', 
       itemIds, 
       consumedAmount 
     } = req.body;
+    
+    // 使用從 JWT token 中取得的 userId
+    const userId = req.userId;
 
     if (!itemIds || !Array.isArray(itemIds)) {
       return res.status(400).json({ 

@@ -1,20 +1,21 @@
 import { Router } from 'express';
+import { auth } from '../middleware/auth.js';
 import Item from '../models/Item.js';
 
 const router = Router();
 
 // 取得所有項目（包含庫存和已消耗的）
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const { 
-      userId = '',
       status,
       sortBy = 'createdAt',
       order = 'desc',
       limit = 50
     } = req.query;
 
-    const filter = { userId };
+    // 使用從 JWT token 中取得的 userId
+    const filter = { userId: req.userId };
     if (status && status !== 'all') {
       filter.status = status;
     }
