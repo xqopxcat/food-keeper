@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { evaluateShelfLife } from '../services/shelfLife.js';
 import Product from '../models/Product.js';
 import Item from '../models/Item.js';
+import { auth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ const router = Router();
  *   save?: boolean               // true 的話順便存 Item（可選）
  * }
  */
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const {
     barcode, manualName,
     itemKey, storageMode, state,
@@ -28,6 +29,8 @@ router.post('/', async (req, res) => {
     // 新增的庫存管理欄位
     quantity, purchaseDate, location, source = 'manual', notes, tags
   } = req.body || {};
+  
+  const userId = req.userId;
 
   if (!itemKey || !storageMode || !state) {
     return res.status(400).json({ error: 'itemKey, storageMode, state required' });
@@ -68,7 +71,7 @@ router.post('/', async (req, res) => {
   // 5) 可選：存檔（入庫）
   if (save) {
     const itemData = {
-      userId: '', // 暫時使用 ''
+      userId,
       barcode: payload.barcode, 
       name: payload.name, 
       brand: payload.brand,

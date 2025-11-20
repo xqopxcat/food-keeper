@@ -10,11 +10,11 @@ import { inferDefaultsFromProduct } from '../inferDefaults';
  * 統一處理庫存添加邏輯和成功訊息
  */
 export const useAddToInventory = () => {
-  const [addInventoryItem] = useAddInventoryItemMutation();
+  const [addInventoryItem, { isLoading: isAdding }] = useAddInventoryItemMutation();
   
   const addToInventory = async (item, inventoryData, facts) => {
     try {
-      console.log('Adding to inventory:', item);
+      console.log('Adding to inventory:', item, inventoryData);
       
       // 如果已經有保存期限資訊就直接使用，否則使用 inferDefaults
       let itemKey = item.itemKey || facts.itemKey;
@@ -125,7 +125,7 @@ export const useAddToInventory = () => {
     return notes.join(' | ');
   };
 
-  return { addToInventory };
+  return { addToInventory, isAdding };
 };
 
 /**
