@@ -375,7 +375,7 @@ const AiIdentificationView = () => {
             <ActionCard
               icon="📝"
               title="包裝文字識別"
-              subtitle="掃描包裝上的文字信息和有效期限"
+              subtitle="掃描包裝上的文字和有效期限"
             />
             
             <ActionCard

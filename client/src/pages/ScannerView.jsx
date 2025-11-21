@@ -10,10 +10,6 @@ import {
   useLazyLookupByBarcodeQuery,
   useEstimateShelfLifeMutation,
 } from '../redux/services/foodCoreAPI.js';
-import {
-  useSubscribePushMutation,
-  useSendTestPushMutation,
-} from '../redux/services/subscribeCoreAPI.js';
 import { inferDefaultsFromProduct } from '../inferDefaults.js';
 import { useInventoryManagement, useStorageContext } from '../hooks/useInventoryData.js';
 import { useShelfLifeEstimate } from '../hooks/useInventoryActions.js';
@@ -22,7 +18,6 @@ const ScannerView = () => {
   const [barcode, setBarcode] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [pushOK, setPushOK] = useState(false);
   const [estimate, setEstimate] = useState(null);
 
   // 使用自定義 hooks
@@ -36,9 +31,6 @@ const ScannerView = () => {
     isLoading: lookupLoading, 
     error: lookupError 
   }] = useLazyLookupByBarcodeQuery();
-
-  const [subscribePush] = useSubscribePushMutation();
-  const [sendTestPush] = useSendTestPushMutation();
   
   // 處理查詢結果
   useEffect(() => {
@@ -101,24 +93,6 @@ const ScannerView = () => {
     triggerLookup(code, true);
   }
 
-  async function enablePush() {
-    try { 
-      await subscribePush().unwrap();
-      setPushOK(true);
-      alert('推播訂閱成功');
-    } catch (e) { 
-      alert(e?.message || '推播訂閱失敗');
-    }
-  }
-
-  async function handleSendTestPush() {
-    try {
-      await sendTestPush().unwrap();
-    } catch (e) {
-      alert(e?.message || '發送測試推播失敗');
-    }
-  }
-
   const readyForEstimate = !!facts.itemKey && !!facts.storageMode;
   const loading = lookupLoading;
 
@@ -130,64 +104,6 @@ const ScannerView = () => {
       />
 
       <div className="responsive-container" style={COMMON_STYLES.container}>
-        {/* 推播控制卡片 */}
-        <Card 
-          title="🔔 推播通知設定" 
-          style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}
-        >
-          <p style={{
-            margin: `0 0 ${DESIGN_SYSTEM.spacing.md} 0`,
-            color: DESIGN_SYSTEM.colors.gray[600],
-            fontSize: DESIGN_SYSTEM.typography.sizes.sm,
-            lineHeight: '1.5'
-          }}>
-            啟用推播通知以接收食材到期提醒
-          </p>
-          
-          <div className="grid-responsive-actions">
-            <button 
-              onClick={enablePush}
-              style={{
-                ...COMMON_STYLES.primaryButton,
-                justifyContent: 'center'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.lg;
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.button;
-              }}
-            >
-              🔔 啟用推播通知
-            </button>
-            
-            <button 
-              onClick={handleSendTestPush} 
-              disabled={!pushOK}
-              style={{
-                ...COMMON_STYLES.secondaryButton,
-                justifyContent: 'center',
-                opacity: pushOK ? 1 : 0.5,
-                cursor: pushOK ? 'pointer' : 'not-allowed'
-              }}
-              onMouseEnter={(e) => {
-                if (pushOK) {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = DESIGN_SYSTEM.shadows.md;
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = DESIGN_SYSTEM.shadows.sm;
-              }}
-            >
-              📤 發送測試推播
-            </button>
-          </div>
-        </Card>
-
         {/* 掃描區域 */}
         {!barcode && (
           <Card 

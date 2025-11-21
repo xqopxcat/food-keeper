@@ -223,6 +223,44 @@ export const foodCoreAPI = createApi({
     getAiStatus: builder.query({
       query: () => 'ai/status',
     }),
+
+    // 推播通知相關 API
+    
+    // 獲取 VAPID 公鑰
+    getPushPublicKey: builder.query({
+      query: () => 'push/public-key',
+    }),
+
+    // 訂閱推播
+    subscribePush: builder.mutation({
+      query: (subscription) => ({
+        url: 'push/subscribe',
+        method: 'POST',
+        body: subscription,
+      }),
+    }),
+
+    // 更新通知設定
+    updateNotificationSettings: builder.mutation({
+      query: (settings) => ({
+        url: 'push/settings',
+        method: 'PUT',
+        body: settings,
+      }),
+    }),
+
+    // 獲取通知設定
+    getNotificationSettings: builder.query({
+      query: () => 'push/settings',
+    }),
+
+    // 測試推播（開發用）
+    sendTestPush: builder.mutation({
+      query: () => ({
+        url: 'push/test',
+        method: 'POST',
+      }),
+    }),
   }),
 });
 
@@ -250,6 +288,13 @@ export const {
   useExtractTextFromImageFileMutation,
   useBatchIdentifyFoodItemsMutation,
   useGetAiStatusQuery,
+  
+  // 推播通知相關 hooks
+  useGetPushPublicKeyQuery,
+  useSubscribePushMutation,
+  useUpdateNotificationSettingsMutation,
+  useGetNotificationSettingsQuery,
+  useSendTestPushMutation,
   
   // 其他
   util: { invalidateTags },
