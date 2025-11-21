@@ -14,6 +14,7 @@ import aiRoute from './routes/ai.js';
 import authRoute from './routes/auth.js';
 import session from 'express-session';
 import passport from './config/passport.js';
+import { setupNotificationSchedule } from './services/notificationService.js';
 
 const app = express();
 app.use(cors({
@@ -53,7 +54,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/foodke
 
 // 連接 MongoDB
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('🗄️ MongoDB connected successfully'))
+  .then(() => {
+    console.log('🗄️ MongoDB connected successfully');
+    // 啟動通知排程
+    setupNotificationSchedule();
+  })
   .catch((error) => {
     console.error('❌ MongoDB connection failed:', error);
     process.exit(1);
