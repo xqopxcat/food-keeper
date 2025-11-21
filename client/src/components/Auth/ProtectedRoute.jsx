@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { DESIGN_SYSTEM } from '../../styles/designSystem';
 
 const ProtectedRoute = ({ children, requireAuth = true }) => {
   const { user, loading } = useAuth();
@@ -13,26 +14,48 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(26, 26, 46, 0.95) 50%, rgba(22, 33, 62, 0.9) 100%)',
-        color: '#00ffff'
+        backgroundColor: DESIGN_SYSTEM.colors.gray[50],
+        background: DESIGN_SYSTEM.colors.gradients.secondary
       }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🏃‍♂️</div>
+        <div style={{ 
+          textAlign: 'center',
+          padding: DESIGN_SYSTEM.spacing.xl
+        }}>
+          {/* Spinner */}
           <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid rgba(0, 255, 255, 0.3)',
-            borderTop: '3px solid #00ffff',
+            width: '48px',
+            height: '48px',
+            border: `4px solid ${DESIGN_SYSTEM.colors.gray[200]}`,
+            borderTop: `4px solid ${DESIGN_SYSTEM.colors.primary[500]}`,
             borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
+            animation: 'spin 0.8s linear infinite',
+            margin: `0 auto ${DESIGN_SYSTEM.spacing.lg}`
           }} />
-          <div style={{ fontSize: '16px' }}>正在載入...</div>
+          
+          {/* Loading Text */}
+          <div style={{ 
+            fontSize: DESIGN_SYSTEM.typography.sizes.lg,
+            fontWeight: DESIGN_SYSTEM.typography.weights.semibold,
+            color: DESIGN_SYSTEM.colors.gray[700],
+            marginBottom: DESIGN_SYSTEM.spacing.xs
+          }}>
+            正在載入中
+          </div>
         </div>
+        
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          
+          @keyframes bounce {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-10px);
+            }
           }
         `}</style>
       </div>
@@ -46,7 +69,7 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
 
   if (!requireAuth && user) {
     // 已登入用戶訪問登入/註冊頁面時重定向到 dashboard
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

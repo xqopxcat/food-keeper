@@ -79,14 +79,6 @@ const LoginView = () => {
           position: 'relative',
           zIndex: 1
         }}>
-          <div style={{
-            fontSize: '64px',
-            marginBottom: DESIGN_SYSTEM.spacing.md,
-            filter: 'drop-shadow(0 4px 12px rgba(14, 165, 233, 0.2))'
-          }}>
-            🥬
-          </div>
-          
           <h1 style={{
             margin: 0,
             fontSize: DESIGN_SYSTEM.typography.sizes.xxl,
@@ -111,73 +103,6 @@ const LoginView = () => {
             <br />
             讓 AI 幫你管理食材保存期限
           </p>
-        </div>
-
-        {/* 功能預覽 */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: DESIGN_SYSTEM.spacing.md,
-          marginBottom: DESIGN_SYSTEM.spacing.xxl,
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            padding: DESIGN_SYSTEM.spacing.md,
-            backgroundColor: DESIGN_SYSTEM.colors.primary[50],
-            borderRadius: DESIGN_SYSTEM.borderRadius.lg,
-            border: `1px solid ${DESIGN_SYSTEM.colors.primary[200]}`
-          }}>
-            <div style={{ 
-              fontSize: '24px', 
-              marginBottom: DESIGN_SYSTEM.spacing.xs 
-            }}>🤖</div>
-            <div style={{
-              fontSize: DESIGN_SYSTEM.typography.sizes.xs,
-              color: DESIGN_SYSTEM.colors.primary[700],
-              fontWeight: '600'
-            }}>
-              AI 識別
-            </div>
-          </div>
-          
-          <div style={{
-            padding: DESIGN_SYSTEM.spacing.md,
-            backgroundColor: DESIGN_SYSTEM.colors.secondary[50],
-            borderRadius: DESIGN_SYSTEM.borderRadius.lg,
-            border: `1px solid ${DESIGN_SYSTEM.colors.gray[200]}`
-          }}>
-            <div style={{ 
-              fontSize: '24px', 
-              marginBottom: DESIGN_SYSTEM.spacing.xs 
-            }}>📱</div>
-            <div style={{
-              fontSize: DESIGN_SYSTEM.typography.sizes.xs,
-              color: DESIGN_SYSTEM.colors.gray[700],
-              fontWeight: '600'
-            }}>
-              條碼掃描
-            </div>
-          </div>
-          
-          <div style={{
-            padding: DESIGN_SYSTEM.spacing.md,
-            backgroundColor: DESIGN_SYSTEM.colors.success + '20',
-            borderRadius: DESIGN_SYSTEM.borderRadius.lg,
-            border: `1px solid ${DESIGN_SYSTEM.colors.success}40`
-          }}>
-            <div style={{ 
-              fontSize: '24px', 
-              marginBottom: DESIGN_SYSTEM.spacing.xs 
-            }}>📦</div>
-            <div style={{
-              fontSize: DESIGN_SYSTEM.typography.sizes.xs,
-              color: DESIGN_SYSTEM.colors.success,
-              fontWeight: '600'
-            }}>
-              庫存管理
-            </div>
-          </div>
         </div>
 
         {/* Google Login Button */}

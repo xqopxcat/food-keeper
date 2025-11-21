@@ -64,7 +64,7 @@ const DesktopSidebar = () => {
           alignItems: 'center',
           gap: DESIGN_SYSTEM.spacing.sm
         }}>
-          🥬 Food Keeper
+          Food Keeper
         </h1>
         <p style={{
           margin: `${DESIGN_SYSTEM.spacing.xs} 0 0 0`,

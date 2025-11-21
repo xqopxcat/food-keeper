@@ -131,7 +131,6 @@ const InventoryView = () => {
         }}>
           <StatusCard
             status="info"
-            icon="📊"
             title="總項目"
             value={stats.total || 0}
             unit=""
@@ -139,7 +138,6 @@ const InventoryView = () => {
           
           <StatusCard
             status="success"
-            icon="✅"
             title="可用"
             value={stats.available || 0}
             unit=""
@@ -147,7 +145,6 @@ const InventoryView = () => {
           
           <StatusCard
             status="warning"
-            icon="⚠️"
             title="即將到期"
             value={stats.warning || 0}
             unit=""
@@ -155,7 +152,6 @@ const InventoryView = () => {
           
           <StatusCard
             status="error"
-            icon="❌"
             title="已過期"
             value={stats.expired || 0}
             unit=""
@@ -304,7 +300,7 @@ const InventoryView = () => {
 
         {/* 庫存清單 */}
         <Card 
-          title={`📋 庫存清單 ${inventory.length > 0 ? `(${inventory.length})` : ''}`}
+          title={`庫存清單 ${inventory.length > 0 ? `(${inventory.length})` : ''}`}
         >
           {inventory.length === 0 ? (
             <div style={{

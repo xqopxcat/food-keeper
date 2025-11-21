@@ -120,7 +120,7 @@ const InventorySetupModal = ({
               fontSize: '16px',
               fontWeight: '600'
             }}>
-              🥬 食材種類
+              食材種類
             </h4>
             <FoodSelector
               value={facts.itemKey}

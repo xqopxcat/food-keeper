@@ -129,7 +129,7 @@ const InventoryItem = ({
               borderRadius: '4px',
               borderLeft: '3px solid #e5e7eb'
             }}>
-              💭 {item.notes}
+              {item.notes}
             </div>
           )}
           
