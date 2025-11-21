@@ -26,28 +26,25 @@ export async function sendExpiringNotifications() {
     
     const results = [];
     
-    // 對每個使用者檢查到期食材
-    for (const sub of subscriptions) {
-      try {
-        const { userId, notifyBeforeDays } = sub;
-        
-        // 計算截止日期
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const notifyDate = new Date(today);
-        notifyDate.setDate(notifyDate.getDate() + notifyBeforeDays);
-        
-        // 查詢即將到期的項目
-        const expiringItems = await Item.find({
-          userId,
-          status: { $in: ['fresh', 'warning'] }, // 只通知可用的項目
-          expiresMaxAt: { $lte: notifyDate }
-        }).sort({ expiresMaxAt: 1 }).limit(10).lean();
-        
-        if (expiringItems.length === 0) {
-          console.log(`[通知服務] 使用者 ${userId} 沒有即將到期的食材`);
-          continue;
-        }
+      // 對每個使用者檢查到期食材
+      for (const sub of subscriptions) {
+        try {
+          const { userId, notifyBeforeDays } = sub;
+          
+          // 計算截止日期（使用當前完整時間，與 getExpiringItems 一致）
+          const notifyDate = new Date();
+          notifyDate.setDate(notifyDate.getDate() + notifyBeforeDays);
+          
+          // 查詢即將到期的項目
+          const expiringItems = await Item.find({
+            userId,
+            status: { $in: ['fresh', 'warning'] }, // 只通知可用的項目
+            expiresMaxAt: { $lte: notifyDate }
+          }).sort({ expiresMaxAt: 1 }).limit(10).lean();
+          if (expiringItems.length === 0) {
+            console.log(`[通知服務] 使用者 ${userId} 沒有即將到期的食材`);
+            continue;
+          }
         
         // 準備通知內容
         const itemNames = expiringItems.slice(0, 3).map(item => item.name).join('、');
@@ -137,10 +134,8 @@ export function setupNotificationSchedule() {
         try {
           const { userId, notifyBeforeDays } = sub;
           
-          // 計算截止日期
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const notifyDate = new Date(today);
+          // 計算截止日期（使用當前完整時間，與 getExpiringItems 一致）
+          const notifyDate = new Date();
           notifyDate.setDate(notifyDate.getDate() + notifyBeforeDays);
           
           // 查詢即將到期的項目
