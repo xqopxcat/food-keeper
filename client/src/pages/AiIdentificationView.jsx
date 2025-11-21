@@ -783,7 +783,7 @@ const AiIdentificationView = () => {
               title="📝 文字識別結果"
               style={{ marginBottom: DESIGN_SYSTEM.spacing.lg }}
             >
-              {/* {
+              {
                 ocrResults.text.allText && (
                   <div style={{
                     marginBottom: DESIGN_SYSTEM.spacing.md,
@@ -801,8 +801,8 @@ const AiIdentificationView = () => {
                     {ocrResults.text.allText}
                   </div>
                 )
-              } */}
-              { ocrResults.text && (ocrResults.text.name || ocrResults.text.itemKey) && (
+              }
+              {/* { ocrResults.text && (ocrResults.text.name || ocrResults.text.itemKey) && (
                 <div style={{
                   padding: DESIGN_SYSTEM.spacing.md,
                   backgroundColor: DESIGN_SYSTEM.colors.gray[50],
@@ -897,7 +897,7 @@ const AiIdentificationView = () => {
                     )}
                   </div>
                 </div>
-              ) }
+              ) } */}
             </Card>
           )}
 

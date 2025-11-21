@@ -122,11 +122,56 @@ ItemSchema.statics.getExpiringItems = function(userId, days = 3) {
 
 // 靜態方法：取得庫存統計
 ItemSchema.statics.getInventoryStats = function(userId) {
+  const now = new Date();
+  
   return this.aggregate([
     { $match: { userId: userId } },
     {
+      $addFields: {
+        // 動態計算實際狀態
+        actualStatus: {
+          $cond: {
+            if: { $eq: ['$status', 'consumed'] }, // 如果已消耗，保持不變
+            then: '$status',
+            else: {
+              $cond: {
+                if: { $eq: ['$status', 'discarded'] }, // 如果已丟棄，保持不變
+                then: '$status',
+                else: {
+                  // 根據到期日動態計算狀態
+                  $cond: {
+                    if: { $lt: ['$expiresMaxAt', now] }, // 已過期
+                    then: 'expired',
+                    else: {
+                      $let: {
+                        vars: {
+                          daysLeft: {
+                            $divide: [
+                              { $subtract: ['$expiresMaxAt', now] },
+                              1000 * 60 * 60 * 24
+                            ]
+                          }
+                        },
+                        in: {
+                          $cond: {
+                            if: { $lte: ['$$daysLeft', 3] }, // 3天內到期
+                            then: 'warning',
+                            else: 'fresh'
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       $group: {
-        _id: '$status',
+        _id: '$actualStatus',
         count: { $sum: 1 },
         totalQuantity: { $sum: '$quantity.amount' }
       }

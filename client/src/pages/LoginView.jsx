@@ -25,40 +25,6 @@ const LoginView = () => {
     setIsLoading(false);
   };
 
-  // Google OAuth 登入處理
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // 這裡將來會整合實際的 Google OAuth API
-      // 目前先模擬登入流程
-      
-      // 模擬 API 調用延遲
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 模擬成功登入
-      const mockToken = 'mock_jwt_token_' + Date.now();
-      const mockUser = {
-        id: 'google_123456789',
-        email: 'user@gmail.com',
-        name: '使用者',
-        picture: 'https://via.placeholder.com/96'
-      };
-      
-      localStorage.setItem('authToken', mockToken);
-      localStorage.setItem('userProfile', JSON.stringify(mockUser));
-      
-      // 導向主頁面
-      navigate('/ai-identification');
-      
-    } catch (err) {
-      setError('登入失敗，請稍後再試');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div style={{
       width: '100vw',

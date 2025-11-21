@@ -24,7 +24,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
-    req.userId = user._id; // 加入 userId 方便使用
+    req.userId = user._id.toString(); // 轉換為字串以匹配 Item schema 的 userId 類型
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

@@ -214,7 +214,7 @@ router.get('/stats', auth, async (req, res) => {
     const userId = req.userId;
     
     const stats = await Item.getInventoryStats(userId);
-    
+    console.log('stats', stats)
     // 格式化統計結果
     const formattedStats = {
       total: 0,
