@@ -56,6 +56,10 @@ export const foodCoreAPI = createApi({
   baseQuery: baseQueryWithLogout,
   tagTypes: ['Item', 'Stats', 'ExpiringItems'],
   endpoints: (builder) => ({
+    getUserProfile: builder.query({
+      query: () => 'auth/me',
+    }),
+    
     // 條碼查詢
     lookupByBarcode: builder.query({
       query: (barcode) => `lookup?barcode=${encodeURIComponent(barcode)}`,
@@ -223,6 +227,8 @@ export const foodCoreAPI = createApi({
 });
 
 export const {
+  useGetUserProfileQuery,
+  useLazyGetUserProfileQuery,
   useLookupByBarcodeQuery,
   useLazyLookupByBarcodeQuery,
   useLookupOrFallbackQuery,

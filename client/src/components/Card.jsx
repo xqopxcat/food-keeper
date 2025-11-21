@@ -162,7 +162,7 @@ export const StatusCard = ({ status, title, subtitle, icon, value, unit, ...prop
 };
 
 // 動作卡片
-export const ActionCard = ({ title, subtitle, icon, action, actionText = "前往", ...props }) => {
+export const ActionCard = ({ title, subtitle, icon, action, actionText, ...props }) => {
   return (
     <Card
       title={title}
@@ -172,25 +172,29 @@ export const ActionCard = ({ title, subtitle, icon, action, actionText = "前往
       hover={true}
       {...props}
     >
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: DESIGN_SYSTEM.spacing.md
-      }}>
-        <div style={{ flex: 1 }} />
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: DESIGN_SYSTEM.spacing.xs,
-          color: DESIGN_SYSTEM.colors.primary[600],
-          fontSize: DESIGN_SYSTEM.typography.sizes.sm,
-          fontWeight: DESIGN_SYSTEM.typography.weights.medium
-        }}>
-          {actionText}
-          <span style={{ fontSize: '12px' }}>→</span>
-        </div>
-      </div>
+      {
+         actionText && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: DESIGN_SYSTEM.spacing.md
+          }}>
+            <div style={{ flex: 1 }} />
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: DESIGN_SYSTEM.spacing.xs,
+              color: DESIGN_SYSTEM.colors.primary[600],
+              fontSize: DESIGN_SYSTEM.typography.sizes.sm,
+              fontWeight: DESIGN_SYSTEM.typography.weights.medium
+            }}>
+              {actionText}
+              <span style={{ fontSize: '12px' }}>→</span>
+            </div>
+          </div>
+         )
+      }
     </Card>
   );
 };

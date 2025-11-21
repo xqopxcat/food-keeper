@@ -370,21 +370,18 @@ const AiIdentificationView = () => {
               icon="🍎"
               title="AI 物件識別"
               subtitle="識別食材種類、品牌和保存方式"
-              actionText="了解更多"
             />
             
             <ActionCard
               icon="📝"
               title="包裝文字識別"
               subtitle="掃描包裝上的文字信息和有效期限"
-              actionText="了解更多"
             />
             
             <ActionCard
               icon="📱"
               title="條碼掃描"
               subtitle="快速查詢產品詳細信息"
-              actionText="了解更多"
             />
           </div>
         </div>

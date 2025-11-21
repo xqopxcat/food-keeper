@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { setRTKGlobalLogout } from '../redux/services/foodCoreAPI.js';
+import { setRTKGlobalLogout, useLazyGetUserProfileQuery } from '../redux/services/foodCoreAPI.js';
 
 const AuthContext = createContext();
 
@@ -15,11 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
-
-  // 獲取 API 基礎 URL
-  const getApiUrl = () => {
-    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-  };
+  const [getUserProfile] = useLazyGetUserProfileQuery();
 
   useEffect(() => {
     // 檢查 URL 中的 Google Auth 回調參數
@@ -68,22 +64,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const apiUrl = getApiUrl();
-      console.log('驗證 token，API URL:', `${apiUrl}/api/auth/me`);
-      
-      const response = await fetch(`${apiUrl}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data } = await getUserProfile();
+      console.log('Token 驗證響應狀態:', data);
 
-      console.log('Token 驗證響應狀態:', response.status);
-
-      if (response.ok) {
-        const userData = await response.json();
+      if (data?.success) {
+        const userData = data?.data?.user;
         console.log('Token 驗證成功:', userData);
-        setUser(userData.data.user);
+        setUser(userData);
       } else {
         console.log('Token 無效，清除登入狀態');
         logout();

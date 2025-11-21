@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderBar from '../components/HeaderBar';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import { DESIGN_SYSTEM, COMMON_STYLES } from '../styles/designSystem.js';
 
 const SettingsView = () => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [userProfile, setUserProfile] = useState(null);
-
-  useEffect(() => {
-    const profileData = localStorage.getItem('userProfile');
-    if (profileData) {
-      setUserProfile(JSON.parse(profileData));
-    }
-  }, []);
 
   const handleLogout = () => {
     // 顯示確認對話框
     if (window.confirm('確定要登出嗎？')) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userProfile');
+      logout();
       navigate('/login');
     }
   };
@@ -63,7 +56,7 @@ const SettingsView = () => {
         paddingBottom: DESIGN_SYSTEM.spacing.xl
       }}>
         {/* 使用者資訊卡片 */}
-        {userProfile && (
+        {user && (
           <div style={{
             ...COMMON_STYLES.card,
             marginBottom: DESIGN_SYSTEM.spacing.lg,
@@ -85,21 +78,16 @@ const SettingsView = () => {
               gap: DESIGN_SYSTEM.spacing.md,
               marginBottom: DESIGN_SYSTEM.spacing.lg
             }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                background: DESIGN_SYSTEM.colors.gradients.primary,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: DESIGN_SYSTEM.typography.sizes.xl,
-                fontWeight: DESIGN_SYSTEM.typography.weights.bold,
-                color: DESIGN_SYSTEM.colors.white,
-                boxShadow: DESIGN_SYSTEM.shadows.sm
-              }}>
-                {userProfile.name ? userProfile.name[0] : '👤'}
-              </div>
+              <img 
+                src={user.profile.avatar} 
+                alt={user.username}
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  objectFit: 'cover'
+                }}
+              />
               
               <div style={{ flex: 1 }}>
                 <div style={{
@@ -108,13 +96,13 @@ const SettingsView = () => {
                   color: DESIGN_SYSTEM.colors.gray[900],
                   marginBottom: DESIGN_SYSTEM.spacing.xs
                 }}>
-                  {userProfile.name || '使用者'}
+                  { user.username }
                 </div>
                 <div style={{
                   fontSize: DESIGN_SYSTEM.typography.sizes.sm,
                   color: DESIGN_SYSTEM.colors.gray[600]
                 }}>
-                  {userProfile.email}
+                  {user.email}
                 </div>
               </div>
               
