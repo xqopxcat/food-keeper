@@ -75,7 +75,7 @@ const InventoryForm = ({
             <input
               type="number"
               min="0"
-              step="0.1"
+              step="1"
               value={inventoryData.quantity?.amount || 0}
               onChange={e => handleQuantityAmountChange(e.target.value)}
               disabled={disabled}

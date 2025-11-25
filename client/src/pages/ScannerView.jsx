@@ -57,16 +57,16 @@ const ScannerView = () => {
   
   // 處理估算保存期限
   async function handleEstimate(save = false) {
-    const result = await estimateAndSave(facts, inventoryData, barcode, result?.product?.name, save);
-    if (result.success) {
+    const scannerResult = await estimateAndSave(facts, inventoryData, barcode, result?.product?.name, save);
+    if (scannerResult.success) {
       if (save) {
-        alert(result.message);
+        alert(scannerResult.message);
         resetForm();
       } else {
-        setEstimate(result.data);
+        setEstimate(scannerResult.data);
       }
     } else {
-      alert(result.message);
+      alert(scannerResult.message);
     }
   }
 

@@ -101,7 +101,6 @@ const LoginView = () => {
           }}>
             智慧食材管理系統
             <br />
-            讓 AI 幫你管理食材保存期限
           </p>
         </div>
 
@@ -123,8 +122,7 @@ const LoginView = () => {
         color: DESIGN_SYSTEM.colors.gray[500],
         textAlign: 'center'
       }}>
-        <div>Food Keeper v1.0.0</div>
-        <div style={{ marginTop: '4px' }}>© 2025 智慧食材管理系統</div>
+        <div>v1.0.0</div>
       </div>
 
       {/* 載入時的動畫樣式 */}

@@ -507,7 +507,7 @@ const SettingsView = () => {
         </div>
 
         {/* 其他設定選項 */}
-        <div style={{
+        {/* <div style={{
           ...COMMON_STYLES.card,
           marginBottom: DESIGN_SYSTEM.spacing.lg,
           padding: 0,
@@ -586,7 +586,7 @@ const SettingsView = () => {
               </div>
             </button>
           ))}
-        </div>
+        </div> */}
 
         {/* 登出按鈕 */}
         <button
